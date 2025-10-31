@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Imagens do Frontend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .image-test {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .image-test img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.loading { background: #fff3cd; color: #856404; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2CB20B;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Teste de Imagens do Frontend - Natureza Brindes</h1>
+        
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalProducts">0</div>
+                <div class="stat-label">Produtos Testados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="successImages">0</div>
+                <div class="stat-label">Imagens OK</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="errorImages">0</div>
+                <div class="stat-label">Imagens com Erro</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="proxyImages">0</div>
+                <div class="stat-label">Via Proxy</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Teste da API de Produtos</h2>
+            <button onclick="testProductsAPI()" id="testApiBtn">Testar API</button>
+            <div class="log" id="apiLog"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🖼️ Teste de Carregamento de Imagens</h2>
+            <div class="test-grid" id="imageGrid"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Teste do Proxy de Imagens</h2>
+            <button onclick="testProxyEndpoint()" id="testProxyBtn">Testar Proxy</button>
+            <div class="log" id="proxyLog"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Log Detalhado</h2>
+            <div class="log" id="detailedLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {
+            totalProducts: 0,
+            successImages: 0,
+            errorImages: 0,
+            proxyImages: 0,
+            products: []
+        };
+
+        function log(message, logId = 'detailedLog') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById(logId);
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function updateStats() {
+            document.getElementById('totalProducts').textContent = testResults.totalProducts;
+            document.getElementById('successImages').textContent = testResults.successImages;
+            document.getElementById('errorImages').textContent = testResults.errorImages;
+            document.getElementById('proxyImages').textContent = testResults.proxyImages;
+        }
+
+        async function testProductsAPI() {
+            const btn = document.getElementById('testApiBtn');
+            btn.disabled = true;
+            btn.textContent = 'Testando...';
+            
+            log('🚀 Iniciando teste da API de produtos...', 'apiLog');
+            
+            try {
+                const response = await fetch('/api/products?page=1&limit=20');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log(`✅ API respondeu com sucesso: ${data.products?.length || 0} produtos encontrados`, 'apiLog');
+                log(`📊 Total de produtos disponíveis: ${data.totalProducts || 'N/A'}`, 'apiLog');
+                
+                if (data.products && data.products.length > 0) {
+                    testResults.products = data.products;
+                    testResults.totalProducts = data.products.length;
+                    updateStats();
+                    
+                    // Testar imagens automaticamente
+                    await testImages(data.products);
+                } else {
+                    log('⚠️ Nenhum produto encontrado na resposta da API', 'apiLog');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao testar API: ${error.message}`, 'apiLog');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Testar API';
+            }
+        }
+
+        async function testImages(products) {
+            log('🖼️ Iniciando teste de imagens...');
+            const imageGrid = document.getElementById('imageGrid');
+            imageGrid.innerHTML = '';
+            
+            testResults.successImages = 0;
+            testResults.errorImages = 0;
+            testResults.proxyImages = 0;
+            
+            for (let i = 0; i < Math.min(products.length, 12); i++) {
+                const product = products[i];
+                await testSingleImage(product, imageGrid);
+            }
+            
+            updateStats();
+            log(`✅ Teste de imagens concluído: ${testResults.successImages} OK, ${testResults.errorImages} com erro`);
+        }
+
+        function testSingleImage(product, container) {
+            return new Promise((resolve) => {
+                const imageTest = document.createElement('div');
+                imageTest.className = 'image-test';
+                
+                const img = document.createElement('img');
+                const status = document.createElement('div');
+                const title = document.createElement('div');
+                
+                title.textContent = product.name.substring(0, 30) + (product.name.length > 30 ? '...' : '');
+                title.style.fontSize = '12px';
+                title.style.marginBottom = '10px';
+                title.style.fontWeight = 'bold';
+                
+                status.className = 'status loading';
+                status.textContent = 'Carregando...';
+                
+                const imageUrl = product.images?.[0];
+                log(`🔍 Testando imagem do produto: ${product.name}`);
+                log(`📎 URL original: ${imageUrl || 'N/A'}`);
+                
+                // Simular a lógica do getValidImageUrl do frontend
+                let finalUrl = getValidImageUrl(imageUrl);
+                log(`🔗 URL final: ${finalUrl}`);
+                
+                if (finalUrl.includes('/api/proxy/image')) {
+                    testResults.proxyImages++;
+                    log(`🔄 Usando proxy para: ${product.name}`);
+                }
+                
+                img.onload = () => {
+                    status.className = 'status success';
+                    status.textContent = '✅ OK';
+                    testResults.successImages++;
+                    updateStats();
+                    log(`✅ Imagem carregada com sucesso: ${product.name}`);
+                    resolve();
+                };
+                
+                img.onerror = () => {
+                    status.className = 'status error';
+                    status.textContent = '❌ Erro';
+                    testResults.errorImages++;
+                    updateStats();
+                    log(`❌ Erro ao carregar imagem: ${product.name} - URL: ${finalUrl}`);
+                    resolve();
+                };
+                
+                img.src = finalUrl;
+                
+                imageTest.appendChild(title);
+                imageTest.appendChild(img);
+                imageTest.appendChild(status);
+                container.appendChild(imageTest);
+                
+                // Timeout para evitar travamento
+                setTimeout(() => {
+                    if (status.textContent === 'Carregando...') {
+                        status.className = 'status error';
+                        status.textContent = '⏱️ Timeout';
+                        testResults.errorImages++;
+                        updateStats();
+                        log(`⏱️ Timeout ao carregar imagem: ${product.name}`);
+                        resolve();
+                    }
+                }, 10000);
+            });
+        }
+
+        // Simular a função getValidImageUrl do frontend
+        function getValidImageUrl(imageUrl) {
+            if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.trim() === '') {
+                return getPlaceholderImage();
+            }
+            
+            if (imageUrl.startsWith('data:') || imageUrl.includes('placeholder')) {
+                return imageUrl;
+            }
+            
+            try {
+                const url = new URL(imageUrl);
+                const corsProblematicDomains = [
+                    'www.spotgifts.com.br',
+                    'spotgifts.com.br',
+                    'cdn.xbzbrindes.com.br', 
+                    'www.cdn.xbzbrindes.com.br',
+                    'images.unsplash.com'
+                ];
+                
+                if (corsProblematicDomains.includes(url.hostname)) {
+                    return `/api/proxy/image?url=${encodeURIComponent(imageUrl)}`;
+                }
+                
+                return imageUrl;
+            } catch (error) {
+                return getPlaceholderImage();
+            }
+        }
+
+        function getPlaceholderImage() {
+            return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDQwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I2Y4ZjlmYTtzdG9wLW9wYWNpdHk6MSIgLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiNlNWU3ZWI7c3RvcC1vcGFjaXR5OjEiIC8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MDAiIGZpbGw9InVybCgjYmcpIi8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMTUwIiByPSI0MCIgZmlsbD0iIzljYTNhZiIgb3BhY2l0eT0iMC4zIi8+PHBhdGggZD0iTTE3MCAyMDBMMjAwIDE3MEwyMzAgMjAwVjI1MEgxNzBWMjAwWiIgZmlsbD0iIzljYTNhZiIgb3BhY2l0eT0iMC4yIi8+PHRleHQgeD0iMjAwIiB5PSIzMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzZiNzQ4MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+SW1hZ2VtIG7Do28gZGlzcG9uw612ZWw8L3RleHQ+PC9zdmc+';
+        }
+
+        async function testProxyEndpoint() {
+            const btn = document.getElementById('testProxyBtn');
+            btn.disabled = true;
+            btn.textContent = 'Testando...';
+            
+            log('🔧 Testando endpoint do proxy...', 'proxyLog');
+            
+            try {
+                // Testar endpoint de teste do proxy
+                const testResponse = await fetch('/api/proxy/test');
+                if (testResponse.ok) {
+                    const testData = await testResponse.json();
+                    log(`✅ Endpoint de teste do proxy: ${testData.message}`, 'proxyLog');
+                } else {
+                    log(`⚠️ Endpoint de teste do proxy retornou: ${testResponse.status}`, 'proxyLog');
+                }
+                
+                // Testar uma imagem específica via proxy
+                const testImageUrl = 'https://www.spotgifts.com.br/image/test.jpg';
+                const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(testImageUrl)}`;
+                
+                log(`🔍 Testando proxy com URL: ${testImageUrl}`, 'proxyLog');
+                
+                const proxyResponse = await fetch(proxyUrl);
+                log(`📊 Resposta do proxy: ${proxyResponse.status} ${proxyResponse.statusText}`, 'proxyLog');
+                log(`📋 Content-Type: ${proxyResponse.headers.get('content-type')}`, 'proxyLog');
+                
+            } catch (error) {
+                log(`❌ Erro ao testar proxy: ${error.message}`, 'proxyLog');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Testar Proxy';
+            }
+        }
+
+        // Executar teste automático ao carregar a página
+        window.onload = () => {
+            log('🚀 Página carregada. Iniciando testes automáticos...');
+            setTimeout(() => {
+                testProductsAPI();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

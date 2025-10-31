@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-09-25T19:57:28.903Z",
+  "summary": {
+    "totalImages": 68,
+    "validUrls": 68,
+    "emptyUrls": 0,
+    "invalidUrls": 0,
+    "brokenUrls": 0
+  },
+  "problematicUrls": [],
+  "validUrlExamples": [
+    "https://www.spotgifts.com.br/fotos/produtos/53426_set.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/53426_103.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/53426_104.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/53426_160.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/94134_set.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/94134_150.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/66221_set.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/66221_103.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/66214_set.jpg",
+    "https://www.spotgifts.com.br/fotos/produtos/66214_123.jpg"
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "timestamp": "2025-09-26T11:29:14.412Z",
+  "totalProducts": 5,
+  "totalImages": 12,
+  "accessibleImages": 12,
+  "inaccessibleImages": 0,
+  "successRate": "100.00",
+  "results": [
+    {
+      "productId": "ecologic-53426",
+      "productName": " 7 blocos adesivados com 25 folhas",
+      "totalImages": 4,
+      "imageTests": [
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/53426_set.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/53426_103.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/53426_104.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/53426_160.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        }
+      ],
+      "accessibleCount": 4,
+      "inaccessibleCount": 0
+    },
+    {
+      "productId": "ecologic-94134",
+      "productName": " Abridor de garrafas em metal com cabo em madeira",
+      "totalImages": 2,
+      "imageTests": [
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/94134_set.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/94134_150.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        }
+      ],
+      "accessibleCount": 2,
+      "inaccessibleCount": 0
+    },
+    {
+      "productId": "ecologic-66221",
+      "productName": " Agenda A5 em PU (58% reciclado)",
+      "totalImages": 2,
+      "imageTests": [
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/66221_set.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/66221_103.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        }
+      ],
+      "accessibleCount": 2,
+      "inaccessibleCount": 0
+    },
+    {
+      "productId": "ecologic-66214",
+      "productName": " Agenda A5 em PU (58% reciclado) e PET reciclado (100% rPET) 300D",
+      "totalImages": 2,
+      "imageTests": [
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/66214_set.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/66214_123.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        }
+      ],
+      "accessibleCount": 2,
+      "inaccessibleCount": 0
+    },
+    {
+      "productId": "ecologic-66207",
+      "productName": " Agenda B5 em PET reciclado (100% rPET)",
+      "totalImages": 2,
+      "imageTests": [
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/66207_set.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        },
+        {
+          "url": "https://www.spotgifts.com.br/fotos/produtos/66207_113.jpg",
+          "accessible": true,
+          "status": 200,
+          "contentType": "image/jpeg"
+        }
+      ],
+      "accessibleCount": 2,
+      "inaccessibleCount": 0
+    }
+  ],
+  "issues": {
+    "productsWithInaccessibleImages": [],
+    "inaccessibleUrls": []
+  }
+}

@@ -1,0 +1,428 @@
+{
+  "timestamp": "2025-09-25T20:02:20.604Z",
+  "totalProducts": 5,
+  "sampleProducts": [
+    {
+      "id": "ecologic-53426",
+      "name": " 7 blocos adesivados com 25 folhas",
+      "description": "7 blocos adesivados com 25 folhas cada e capa em cartão. Este produto é feito de material provenientede gestão florestal sustentável. 80 x 105 x 9 mm",
+      "category": "papelaria",
+      "images": [
+        "https://www.spotgifts.com.br/fotos/produtos/53426_set.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/53426_103.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/53426_104.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/53426_160.jpg"
+      ],
+      "sustainabilityFeatures": [
+        "sustentavel"
+      ],
+      "customizationOptions": [],
+      "price": 0,
+      "inStock": true,
+      "featured": false,
+      "isEcological": true,
+      "isExternal": false,
+      "externalSource": "Supabase",
+      "supplier": "Ecologic",
+      "supplierCode": "53426",
+      "reference": "53426",
+      "ecologicDatabaseId": 53515,
+      "allImages": [
+        "https://www.spotgifts.com.br/fotos/produtos/53426_set.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/53426_103.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/53426_104.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/53426_160.jpg"
+      ],
+      "dimensions": {
+        "height": 20,
+        "width": 25,
+        "length": 54,
+        "weight": 11000
+      },
+      "colorVariations": [
+        {
+          "color": "Preto",
+          "image": "https://www.spotgifts.com.br/fotos/produtos/53426_103.jpg"
+        },
+        {
+          "color": "Azul",
+          "image": "https://www.spotgifts.com.br/fotos/produtos/53426_104.jpg"
+        },
+        {
+          "color": "Natural",
+          "image": "https://www.spotgifts.com.br/fotos/produtos/53426_160.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ecologic-94134",
+      "name": " Abridor de garrafas em metal com cabo em madeira",
+      "description": "Abridor de garrafas em metal com cabo em madeira. A cor e o resultado da impressão nos materiais naturais pode variar entre produtos. 40 x 150 x 17 mm",
+      "category": "ecologicos",
+      "images": [
+        "https://www.spotgifts.com.br/fotos/produtos/94134_set.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/94134_150.jpg"
+      ],
+      "sustainabilityFeatures": [
+        "sustentavel"
+      ],
+      "customizationOptions": [],
+      "price": 0,
+      "inStock": true,
+      "featured": false,
+      "isEcological": true,
+      "isExternal": false,
+      "externalSource": "Supabase",
+      "supplier": "Ecologic",
+      "supplierCode": "94134",
+      "reference": "94134",
+      "ecologicDatabaseId": 54184,
+      "allImages": [
+        "https://www.spotgifts.com.br/fotos/produtos/94134_set.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/94134_150.jpg"
+      ],
+      "dimensions": {
+        "height": 26,
+        "width": 33,
+        "length": 45,
+        "weight": 15500
+      },
+      "colorVariations": [
+        {
+          "color": "Natural claro",
+          "image": "https://www.spotgifts.com.br/fotos/produtos/94134_150.jpg"
+        }
+      ]
+    },
+    {
+      "id": "ecologic-66221",
+      "name": " Agenda A5 em PU (58% reciclado)",
+      "description": "Agenda A5 em PU (58% reciclado), com fecho magnético e placa metálica. Possui um suporte para esferográfica (não inclusa) e um marcador em fita. Está organizada em plano diário. 148 x 212 mm",
+      "category": "papelaria",
+      "images": [
+        "https://www.spotgifts.com.br/fotos/produtos/66221_set.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/66221_103.jpg"
+      ],
+      "sustainabilityFeatures": [
+        "sustentavel"
+      ],
+      "customizationOptions": [],
+      "price": 0,
+      "inStock": true,
+      "featured": false,
+      "isEcological": true,
+      "isExternal": false,
+      "externalSource": "Supabase",
+      "supplier": "Ecologic",
+      "supplierCode": "66221",
+      "reference": "66221",
+      "ecologicDatabaseId": 53612,
+      "allImages": [
+        "https://www.spotgifts.com.br/fotos/produtos/66221_set.jpg",
+        "https://www.spotgifts.com.br/fotos/produtos/66221_103.jpg"
+      ],
+      "dimensions": {
+        "height": 25,
+        "width": 30,
+        "length": 35,
+        "weight": 11800
+      },
+      "colorVariations": [
+        {
+          "color": "Preto",
+          "image": "https://www.spotgifts.com.br/fotos/produtos/66221_103.jpg"
+        }
+      ]
+    }
+  ],
+  "allFields": [
+    "allImages",
+    "category",
+    "colorVariations",
+    "customizationOptions",
+    "description",
+    "dimensions",
+    "ecologicDatabaseId",
+    "externalSource",
+    "featured",
+    "id",
+    "images",
+    "inStock",
+    "isEcological",
+    "isExternal",
+    "name",
+    "price",
+    "reference",
+    "supplier",
+    "supplierCode",
+    "sustainabilityFeatures"
+  ],
+  "fieldTypes": {
+    "allImages": {
+      "types": [
+        "object"
+      ],
+      "samples": [
+        [
+          "https://www.spotgifts.com.br/fotos/produtos/53426_set.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/53426_103.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/53426_104.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/53426_160.jpg"
+        ],
+        [
+          "https://www.spotgifts.com.br/fotos/produtos/94134_set.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/94134_150.jpg"
+        ],
+        [
+          "https://www.spotgifts.com.br/fotos/produtos/66221_set.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/66221_103.jpg"
+        ]
+      ]
+    },
+    "category": {
+      "types": [
+        "string"
+      ],
+      "samples": [
+        "papelaria",
+        "ecologicos",
+        "papelaria"
+      ]
+    },
+    "colorVariations": {
+      "types": [
+        "object"
+      ],
+      "samples": [
+        [
+          {
+            "color": "Preto",
+            "image": "https://www.spotgifts.com.br/fotos/produtos/53426_103.jpg"
+          },
+          {
+            "color": "Azul",
+            "image": "https://www.spotgifts.com.br/fotos/produtos/53426_104.jpg"
+          },
+          {
+            "color": "Natural",
+            "image": "https://www.spotgifts.com.br/fotos/produtos/53426_160.jpg"
+          }
+        ],
+        [
+          {
+            "color": "Natural claro",
+            "image": "https://www.spotgifts.com.br/fotos/produtos/94134_150.jpg"
+          }
+        ],
+        [
+          {
+            "color": "Preto",
+            "image": "https://www.spotgifts.com.br/fotos/produtos/66221_103.jpg"
+          }
+        ]
+      ]
+    },
+    "customizationOptions": {
+      "types": [
+        "object"
+      ],
+      "samples": [
+        [],
+        [],
+        []
+      ]
+    },
+    "description": {
+      "types": [
+        "string"
+      ],
+      "samples": [
+        "7 blocos adesivados com 25 folhas cada e capa em cartão. Este produto é feito de material provenientede gestão florestal sustentável. 80 x 105 x 9 mm",
+        "Abridor de garrafas em metal com cabo em madeira. A cor e o resultado da impressão nos materiais naturais pode variar entre produtos. 40 x 150 x 17 mm",
+        "Agenda A5 em PU (58% reciclado), com fecho magnético e placa metálica. Possui um suporte para esferográfica (não inclusa) e um marcador em fita. Está organizada em plano diário. 148 x 212 mm"
+      ]
+    },
+    "dimensions": {
+      "types": [
+        "object"
+      ],
+      "samples": [
+        {
+          "height": 20,
+          "width": 25,
+          "length": 54,
+          "weight": 11000
+        },
+        {
+          "height": 26,
+          "width": 33,
+          "length": 45,
+          "weight": 15500
+        },
+        {
+          "height": 25,
+          "width": 30,
+          "length": 35,
+          "weight": 11800
+        }
+      ]
+    },
+    "ecologicDatabaseId": {
+      "types": [
+        "number"
+      ],
+      "samples": [
+        53515,
+        54184,
+        53612
+      ]
+    },
+    "externalSource": {
+      "types": [
+        "string"
+      ],
+      "samples": [
+        "Supabase",
+        "Supabase",
+        "Supabase"
+      ]
+    },
+    "featured": {
+      "types": [
+        "boolean"
+      ],
+      "samples": [
+        false,
+        false,
+        false
+      ]
+    },
+    "id": {
+      "types": [
+        "string"
+      ],
+      "samples": [
+        "ecologic-53426",
+        "ecologic-94134",
+        "ecologic-66221"
+      ]
+    },
+    "images": {
+      "types": [
+        "object"
+      ],
+      "samples": [
+        [
+          "https://www.spotgifts.com.br/fotos/produtos/53426_set.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/53426_103.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/53426_104.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/53426_160.jpg"
+        ],
+        [
+          "https://www.spotgifts.com.br/fotos/produtos/94134_set.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/94134_150.jpg"
+        ],
+        [
+          "https://www.spotgifts.com.br/fotos/produtos/66221_set.jpg",
+          "https://www.spotgifts.com.br/fotos/produtos/66221_103.jpg"
+        ]
+      ]
+    },
+    "inStock": {
+      "types": [
+        "boolean"
+      ],
+      "samples": [
+        true,
+        true,
+        true
+      ]
+    },
+    "isEcological": {
+      "types": [
+        "boolean"
+      ],
+      "samples": [
+        true,
+        true,
+        true
+      ]
+    },
+    "isExternal": {
+      "types": [
+        "boolean"
+      ],
+      "samples": [
+        false,
+        false,
+        false
+      ]
+    },
+    "name": {
+      "types": [
+        "string"
+      ],
+      "samples": [
+        " 7 blocos adesivados com 25 folhas",
+        " Abridor de garrafas em metal com cabo em madeira",
+        " Agenda A5 em PU (58% reciclado)"
+      ]
+    },
+    "price": {
+      "types": [
+        "number"
+      ],
+      "samples": [
+        0,
+        0,
+        0
+      ]
+    },
+    "reference": {
+      "types": [
+        "string"
+      ],
+      "samples": [
+        "53426",
+        "94134",
+        "66221"
+      ]
+    },
+    "supplier": {
+      "types": [
+        "string"
+      ],
+      "samples": [
+        "Ecologic",
+        "Ecologic",
+        "Ecologic"
+      ]
+    },
+    "supplierCode": {
+      "types": [
+        "string"
+      ],
+      "samples": [
+        "53426",
+        "94134",
+        "66221"
+      ]
+    },
+    "sustainabilityFeatures": {
+      "types": [
+        "object"
+      ],
+      "samples": [
+        [
+          "sustentavel"
+        ],
+        [
+          "sustentavel"
+        ],
+        [
+          "sustentavel"
+        ]
+      ]
+    }
+  }
+}

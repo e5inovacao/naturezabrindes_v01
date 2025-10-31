@@ -1,0 +1,132 @@
+{
+  "timestamp": "2025-09-25T19:57:10.124Z",
+  "summary": {
+    "total": 20,
+    "successful": 0,
+    "failed": 20,
+    "noImage": 20
+  },
+  "domains": {},
+  "results": [
+    {
+      "url": null,
+      "productName": " 7 blocos adesivados com 25 folhas",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Abridor de garrafas em metal com cabo em madeira",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Agenda A5 em PU (58% reciclado)",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Agenda A5 em PU (58% reciclado) e PET reciclado (100% rPET) 300D",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Agenda B5 em PET reciclado (100% rPET)",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Agenda em cortiça",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Agenda em cortiça",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Agenda em cortiça e linho",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Agenda em PET reciclado (100% rPET)",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Agenda em PET reciclado (100% rPET)",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Alicate dobrável com ferramentas multifunções em aço inox e madeira",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Base de mesa em bambu com 2 potes retráteis em silicone",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Base de mesa em bambu com 3 potes em silicone",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Bateria portátil com carregador wireless em alumínio 100% reciclado e capacidade de 4'000 mAh",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Bateria portátil com carregador wireless super-rápido em bambu 5'000 mAh",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Bateria portátil e carregador wireless em alumínio com bateria de polímero de lítio 4'000 mAh",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Bateria portátil em ABS e bateria de lítio com capacidade de 2'000 mAh",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Bateria portátil em alumínio e bateria em lítio 7'200 mAh",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Bateria portátil em bambu com bateria de lítio 5'000 mAh",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    },
+    {
+      "url": null,
+      "productName": " Bateria portátil slim em alumínio com capacidade de 4'000 mAh",
+      "status": "NO_IMAGE",
+      "error": "Produto não possui URL de imagem"
+    }
+  ]
+}

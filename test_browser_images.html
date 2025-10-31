@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Imagens - Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .product-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .product-image {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+        .image-error {
+            border-color: #ff4444;
+            background: #ffe6e6;
+        }
+        .image-success {
+            border-color: #44ff44;
+        }
+        .status {
+            margin-top: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #e6ffe6;
+            color: #006600;
+        }
+        .status.error {
+            background: #ffe6e6;
+            color: #cc0000;
+        }
+        .status.loading {
+            background: #e6f3ff;
+            color: #0066cc;
+        }
+        .debug-info {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 8px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .summary {
+            background: #e6f3ff;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste de Imagens - Debug Frontend</h1>
+        
+        <div class="summary" id="summary">
+            <h3>📊 Resumo</h3>
+            <p>Carregando produtos da API...</p>
+        </div>
+        
+        <div id="products-container">
+            <!-- Produtos serão inseridos aqui -->
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let totalProducts = 0;
+        let loadedImages = 0;
+        let errorImages = 0;
+
+        // Função para testar uma imagem
+        function testImage(url, productName, container) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const startTime = Date.now();
+                
+                // Configurar eventos antes de definir src
+                img.onload = function() {
+                    const loadTime = Date.now() - startTime;
+                    console.log(`✅ Imagem carregada: ${productName} (${loadTime}ms)`);
+                    
+                    // Atualizar visual
+                    const displayImg = container.querySelector('.product-image');
+                    const status = container.querySelector('.status');
+                    const debugInfo = container.querySelector('.debug-info');
+                    
+                    displayImg.src = url;
+                    displayImg.classList.add('image-success');
+                    status.textContent = `✅ Carregada (${loadTime}ms)`;
+                    status.className = 'status success';
+                    
+                    debugInfo.innerHTML += `<br>✅ onload: ${loadTime}ms<br>Dimensões: ${img.naturalWidth}x${img.naturalHeight}`;
+                    
+                    loadedImages++;
+                    updateSummary();
+                    
+                    resolve({
+                        success: true,
+                        loadTime,
+                        dimensions: `${img.naturalWidth}x${img.naturalHeight}`,
+                        url,
+                        productName
+                    });
+                };
+                
+                img.onerror = function(e) {
+                    const loadTime = Date.now() - startTime;
+                    console.error(`❌ Erro ao carregar imagem: ${productName}`, e);
+                    
+                    // Atualizar visual
+                    const displayImg = container.querySelector('.product-image');
+                    const status = container.querySelector('.status');
+                    const debugInfo = container.querySelector('.debug-info');
+                    
+                    displayImg.classList.add('image-error');
+                    displayImg.alt = 'Erro ao carregar';
+                    status.textContent = `❌ Erro ao carregar`;
+                    status.className = 'status error';
+                    
+                    debugInfo.innerHTML += `<br>❌ onerror: ${e.type || 'unknown error'}<br>Tempo até erro: ${loadTime}ms`;
+                    
+                    errorImages++;
+                    updateSummary();
+                    
+                    resolve({
+                        success: false,
+                        error: e.type || 'unknown error',
+                        loadTime,
+                        url,
+                        productName
+                    });
+                };
+                
+                // Timeout de segurança
+                setTimeout(() => {
+                    if (!img.complete) {
+                        console.warn(`⏰ Timeout para imagem: ${productName}`);
+                        const debugInfo = container.querySelector('.debug-info');
+                        debugInfo.innerHTML += `<br>⏰ Timeout (10s)`;
+                        
+                        resolve({
+                            success: false,
+                            error: 'timeout',
+                            loadTime: 10000,
+                            url,
+                            productName
+                        });
+                    }
+                }, 10000);
+                
+                // Definir src por último
+                img.src = url;
+            });
+        }
+        
+        // Função para atualizar resumo
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const tested = loadedImages + errorImages;
+            
+            summary.innerHTML = `
+                <h3>📊 Resumo</h3>
+                <p><strong>Total de produtos:</strong> ${totalProducts}</p>
+                <p><strong>Imagens testadas:</strong> ${tested}/${totalProducts}</p>
+                <p><strong>✅ Carregadas com sucesso:</strong> ${loadedImages}</p>
+                <p><strong>❌ Com erro:</strong> ${errorImages}</p>
+                <p><strong>Taxa de sucesso:</strong> ${totalProducts > 0 ? Math.round((loadedImages / totalProducts) * 100) : 0}%</p>
+            `;
+        }
+        
+        // Função para criar card do produto
+        function createProductCard(product, index) {
+            const imageUrl = product.images?.[0];
+            
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                <h3>${product.name}</h3>
+                <div style="display: flex; gap: 16px;">
+                    <div>
+                        <img class="product-image" alt="${product.name}" style="background: #f0f0f0;">
+                        <div class="status loading">🔄 Carregando...</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="debug-info">
+                            <strong>Debug Info:</strong><br>
+                            URL: ${imageUrl || 'N/A'}<br>
+                            Produto ID: ${product.id}<br>
+                            Categoria: ${product.category}<br>
+                            Campo images: ${JSON.stringify(product.images)}<br>
+                            Timestamp: ${new Date().toISOString()}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return { card, imageUrl };
+        }
+        
+        // Função principal
+        async function testProductImages() {
+            try {
+                console.log('🚀 Iniciando teste de imagens...');
+                
+                // Buscar produtos da API
+                const response = await fetch('http://localhost:5175/api/products?limit=10');
+                const data = await response.json();
+                
+                if (!data.success || !data.data?.items) {
+                    throw new Error('Dados inválidos da API');
+                }
+                
+                const products = data.data.items;
+                totalProducts = products.length;
+                
+                console.log(`📦 ${totalProducts} produtos encontrados`);
+                
+                const container = document.getElementById('products-container');
+                
+                // Criar cards para cada produto
+                for (let i = 0; i < products.length; i++) {
+                    const product = products[i];
+                    const { card, imageUrl } = createProductCard(product, i);
+                    
+                    container.appendChild(card);
+                    
+                    // Testar imagem se existir URL
+                    if (imageUrl) {
+                        const result = await testImage(imageUrl, product.name, card);
+                        testResults.push(result);
+                    } else {
+                        console.warn(`⚠️ Produto sem imagem: ${product.name}`);
+                        const status = card.querySelector('.status');
+                        status.textContent = '⚠️ Sem URL de imagem';
+                        status.className = 'status error';
+                        
+                        errorImages++;
+                        testResults.push({
+                            success: false,
+                            error: 'no_url',
+                            url: null,
+                            productName: product.name
+                        });
+                    }
+                    
+                    updateSummary();
+                    
+                    // Pequena pausa entre testes
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                console.log('✅ Teste concluído!');
+                console.log('📊 Resultados:', testResults);
+                
+            } catch (error) {
+                console.error('❌ Erro durante o teste:', error);
+                document.getElementById('summary').innerHTML = `
+                    <h3>❌ Erro</h3>
+                    <p>Erro ao carregar produtos: ${error.message}</p>
+                `;
+            }
+        }
+        
+        // Iniciar teste quando a página carregar
+        document.addEventListener('DOMContentLoaded', testProductImages);
+    </script>
+</body>
+</html>

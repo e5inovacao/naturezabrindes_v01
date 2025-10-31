@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste do Proxy de Imagens</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-image {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .image-container {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+            vertical-align: top;
+        }
+        .image-info {
+            font-size: 12px;
+            margin-top: 5px;
+            max-width: 200px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Teste do Proxy de Imagens</h1>
+        <p>Este teste verifica se o proxy de imagens está funcionando corretamente para resolver problemas de CORS.</p>
+        
+        <div class="test-section">
+            <h2>📊 Status dos Testes</h2>
+            <div id="status">Iniciando testes...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔗 Teste do Endpoint do Proxy</h2>
+            <div id="proxy-test">Testando...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🖼️ Teste de Carregamento de Imagens</h2>
+            <div id="images-container"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Logs Detalhados</h2>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const logs = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            logs.push({ message: logMessage, type });
+            console.log(logMessage);
+            updateLogsDisplay();
+        }
+        
+        function updateLogsDisplay() {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.innerHTML = logs.map(l => 
+                `<div class="${l.type}">${l.message}</div>`
+            ).join('');
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            document.getElementById('status').innerHTML = `<span class="${type}">${message}</span>`;
+        }
+        
+        async function testProxyEndpoint() {
+            try {
+                log('Testando endpoint /api/proxy/test...', 'info');
+                const response = await fetch('/api/proxy/test');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Endpoint do proxy está funcionando!', 'success');
+                    document.getElementById('proxy-test').innerHTML = 
+                        `<span class="success">✅ Proxy funcionando: ${data.message}</span>`;
+                    return true;
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido');
+                }
+            } catch (error) {
+                log(`❌ Erro no endpoint do proxy: ${error.message}`, 'error');
+                document.getElementById('proxy-test').innerHTML = 
+                    `<span class="error">❌ Erro: ${error.message}</span>`;
+                return false;
+            }
+        }
+        
+        async function testImageUrls() {
+            const testUrls = [
+                'https://www.spotgifts.com.br/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/b/l/bloco_de_anotacoes_com_autoadesivos_12628d1_635.jpg',
+                'https://www.spotgifts.com.br/media/catalog/product/cache/1/image/9df78eab33525d08d6e5fb8d27136e95/b/l/bloco_de_anotacoes_com_autoadesivos_12628d2_635.jpg'
+            ];
+            
+            const container = document.getElementById('images-container');
+            
+            for (let i = 0; i < testUrls.length; i++) {
+                const originalUrl = testUrls[i];
+                const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(originalUrl)}`;
+                
+                log(`Testando imagem ${i + 1}: ${originalUrl}`, 'info');
+                
+                // Criar container para esta imagem
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'image-container';
+                
+                // Testar URL original (deve falhar por CORS)
+                const originalImg = document.createElement('img');
+                originalImg.className = 'test-image';
+                originalImg.style.border = '2px solid #dc3545';
+                originalImg.onload = () => {
+                    log(`✅ Imagem original ${i + 1} carregou (inesperado!)`, 'warning');
+                };
+                originalImg.onerror = () => {
+                    log(`❌ Imagem original ${i + 1} falhou (esperado - CORS)`, 'info');
+                };
+                originalImg.src = originalUrl;
+                
+                // Testar URL do proxy (deve funcionar)
+                const proxyImg = document.createElement('img');
+                proxyImg.className = 'test-image';
+                proxyImg.style.border = '2px solid #28a745';
+                proxyImg.onload = () => {
+                    log(`✅ Imagem via proxy ${i + 1} carregou com sucesso!`, 'success');
+                    proxyImg.style.border = '2px solid #28a745';
+                };
+                proxyImg.onerror = () => {
+                    log(`❌ Imagem via proxy ${i + 1} falhou`, 'error');
+                    proxyImg.style.border = '2px solid #dc3545';
+                };
+                proxyImg.src = proxyUrl;
+                
+                // Adicionar informações
+                imageContainer.innerHTML = `
+                    <div><strong>Teste ${i + 1}</strong></div>
+                    <div>Original (deve falhar):</div>
+                `;
+                imageContainer.appendChild(originalImg);
+                imageContainer.innerHTML += '<div>Via Proxy (deve funcionar):</div>';
+                imageContainer.appendChild(proxyImg);
+                imageContainer.innerHTML += `
+                    <div class="image-info">
+                        <div>URL: ${originalUrl.substring(0, 50)}...</div>
+                        <div>Proxy: ${proxyUrl.substring(0, 50)}...</div>
+                    </div>
+                `;
+                
+                container.appendChild(imageContainer);
+            }
+        }
+        
+        async function runTests() {
+            updateStatus('🔄 Executando testes...', 'info');
+            log('Iniciando testes do proxy de imagens...', 'info');
+            
+            // Teste 1: Verificar se o endpoint do proxy está funcionando
+            const proxyWorking = await testProxyEndpoint();
+            
+            if (proxyWorking) {
+                // Teste 2: Testar carregamento de imagens
+                await testImageUrls();
+                updateStatus('✅ Testes concluídos! Verifique os resultados abaixo.', 'success');
+            } else {
+                updateStatus('❌ Proxy não está funcionando. Verifique o servidor.', 'error');
+            }
+            
+            log('Testes finalizados.', 'info');
+        }
+        
+        // Executar testes quando a página carregar
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

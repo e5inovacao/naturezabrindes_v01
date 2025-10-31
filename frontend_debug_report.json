@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-09-25T20:03:14.222Z",
+  "apiStatus": 200,
+  "totalProducts": 10,
+  "testedProducts": 5,
+  "summary": {
+    "frontendAccessSuccess": 5,
+    "frontendAccessFailed": 0,
+    "imageUrlsWorking": 5,
+    "imageUrlsBroken": 0
+  },
+  "details": [
+    {
+      "productName": " 7 blocos adesivados com 25 folhas",
+      "frontendAccess": "SUCCESS",
+      "imageUrl": "https://www.spotgifts.com.br/fotos/produtos/53426_set.jpg",
+      "testResult": {
+        "url": "https://www.spotgifts.com.br/fotos/produtos/53426_set.jpg",
+        "productName": " 7 blocos adesivados com 25 folhas",
+        "status": "OK",
+        "httpStatus": 200
+      }
+    },
+    {
+      "productName": " Abridor de garrafas em metal com cabo em madeira",
+      "frontendAccess": "SUCCESS",
+      "imageUrl": "https://www.spotgifts.com.br/fotos/produtos/94134_set.jpg",
+      "testResult": {
+        "url": "https://www.spotgifts.com.br/fotos/produtos/94134_set.jpg",
+        "productName": " Abridor de garrafas em metal com cabo em madeira",
+        "status": "OK",
+        "httpStatus": 200
+      }
+    },
+    {
+      "productName": " Agenda A5 em PU (58% reciclado)",
+      "frontendAccess": "SUCCESS",
+      "imageUrl": "https://www.spotgifts.com.br/fotos/produtos/66221_set.jpg",
+      "testResult": {
+        "url": "https://www.spotgifts.com.br/fotos/produtos/66221_set.jpg",
+        "productName": " Agenda A5 em PU (58% reciclado)",
+        "status": "OK",
+        "httpStatus": 200
+      }
+    },
+    {
+      "productName": " Agenda A5 em PU (58% reciclado) e PET reciclado (100% rPET) 300D",
+      "frontendAccess": "SUCCESS",
+      "imageUrl": "https://www.spotgifts.com.br/fotos/produtos/66214_set.jpg",
+      "testResult": {
+        "url": "https://www.spotgifts.com.br/fotos/produtos/66214_set.jpg",
+        "productName": " Agenda A5 em PU (58% reciclado) e PET reciclado (100% rPET) 300D",
+        "status": "OK",
+        "httpStatus": 200
+      }
+    },
+    {
+      "productName": " Agenda B5 em PET reciclado (100% rPET)",
+      "frontendAccess": "SUCCESS",
+      "imageUrl": "https://www.spotgifts.com.br/fotos/produtos/66207_set.jpg",
+      "testResult": {
+        "url": "https://www.spotgifts.com.br/fotos/produtos/66207_set.jpg",
+        "productName": " Agenda B5 em PET reciclado (100% rPET)",
+        "status": "OK",
+        "httpStatus": 200
+      }
+    }
+  ]
+}

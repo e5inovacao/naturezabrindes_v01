@@ -1,0 +1,53 @@
+{
+  "timestamp": "2025-09-26T11:26:31.431Z",
+  "totalTested": 5,
+  "successful": 5,
+  "failed": 0,
+  "results": [
+    {
+      "productId": "ecologic-53426",
+      "apiWorking": true,
+      "productFound": true,
+      "productName": " 7 blocos adesivados com 25 folhas",
+      "hasImages": true,
+      "imageCount": 4
+    },
+    {
+      "productId": "ecologic-94134",
+      "apiWorking": true,
+      "productFound": true,
+      "productName": " Abridor de garrafas em metal com cabo em madeira",
+      "hasImages": true,
+      "imageCount": 2
+    },
+    {
+      "productId": "ecologic-66221",
+      "apiWorking": true,
+      "productFound": true,
+      "productName": " Agenda A5 em PU (58% reciclado)",
+      "hasImages": true,
+      "imageCount": 2
+    },
+    {
+      "productId": "ecologic-66214",
+      "apiWorking": true,
+      "productFound": true,
+      "productName": " Agenda A5 em PU (58% reciclado) e PET reciclado (100% rPET) 300D",
+      "hasImages": true,
+      "imageCount": 2
+    },
+    {
+      "productId": "ecologic-66207",
+      "apiWorking": true,
+      "productFound": true,
+      "productName": " Agenda B5 em PET reciclado (100% rPET)",
+      "hasImages": true,
+      "imageCount": 2
+    }
+  ],
+  "summary": {
+    "apiWorking": 5,
+    "productsFound": 5,
+    "withImages": 5
+  }
+}

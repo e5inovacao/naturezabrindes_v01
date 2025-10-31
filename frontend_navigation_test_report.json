@@ -1,0 +1,133 @@
+{
+  "timestamp": "2025-09-26T11:28:26.453Z",
+  "totalTested": 11,
+  "summary": {
+    "working": 11,
+    "broken": 0,
+    "notFound": 0,
+    "productRoutes": 3,
+    "workingProductRoutes": 3
+  },
+  "testedProducts": [
+    {
+      "id": "ecologic-53426",
+      "name": " 7 blocos adesivados com 25 folhas",
+      "route": "/produto/ecologic-53426"
+    },
+    {
+      "id": "ecologic-94134",
+      "name": " Abridor de garrafas em metal com cabo em madeira",
+      "route": "/produto/ecologic-94134"
+    },
+    {
+      "id": "ecologic-66221",
+      "name": " Agenda A5 em PU (58% reciclado)",
+      "route": "/produto/ecologic-66221"
+    }
+  ],
+  "results": [
+    {
+      "route": "/",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/catalogo",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/carrinho",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/orcamento",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/sobre",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/contato",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/produto/ecologic-53426",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/produto/ecologic-94134",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/produto/ecologic-66221",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/produto/produto-inexistente",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    },
+    {
+      "route": "/rota-inexistente",
+      "status": 200,
+      "working": true,
+      "hasReactRoot": true,
+      "hasReactScripts": true,
+      "is404Page": false,
+      "contentLength": 926
+    }
+  ],
+  "issues": {
+    "brokenRoutes": [],
+    "unexpectedNotFound": []
+  }
+}
