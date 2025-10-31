@@ -63,6 +63,7 @@ interface ItensOrcamentoInsert {
   products_quantidade_03?: number;
   color?: string;
   customizations?: string;
+  img_ref_url?: string;
   created_at?: string;
 }
 type UsuarioCliente = Database['Tables']['usuarios_cliente']['Row'];
