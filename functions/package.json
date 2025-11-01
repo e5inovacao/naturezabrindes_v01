@@ -1,0 +1,10 @@
+{
+  "name": "natureza-brindes-functions",
+  "version": "1.0.0",
+  "description": "Cloudflare Functions for Natureza Brindes API",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}
