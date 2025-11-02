@@ -1,12 +1,15 @@
 // Cloudflare Pages Function - API Implementation
 import { createClient } from '@supabase/supabase-js';
 
-// CORS headers
+// CORS headers - Configuração robusta para produção
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, HEAD',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin, User-Agent, DNT, Cache-Control, X-Mx-ReqToken, Keep-Alive, X-Requested-With, If-Modified-Since',
+  'Access-Control-Expose-Headers': 'Content-Length, Content-Range',
   'Access-Control-Max-Age': '86400',
+  'Access-Control-Allow-Credentials': 'false',
+  'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
 };
 
 // Handle CORS preflight requests
@@ -45,7 +48,17 @@ function apiResponse(data: any, status = 200) {
 
 // Error response helper
 function errorResponse(message: string, status = 500) {
-  return apiResponse({ success: false, error: message }, status);
+  const errorData = {
+    success: false,
+    error: message,
+    status,
+    timestamp: new Date().toISOString(),
+    service: 'cloudflare-api'
+  };
+  
+  console.error(`[${new Date().toISOString()}] [CLOUDFLARE_API] ❌ Erro retornado:`, errorData);
+  
+  return apiResponse(errorData, status);
 }
 
 // Products API handlers
@@ -303,30 +316,249 @@ function handleHealth() {
 // Main request handler
 export async function onRequest(context: any) {
   const { request, env } = context;
+  const startTime = Date.now();
   
-  // Handle CORS preflight
-  const corsResponse = handleCORS(request);
-  if (corsResponse) return corsResponse;
-
-  const url = new URL(request.url);
-  const pathSegments = url.pathname.replace('/api/', '').split('/').filter(Boolean);
-
-  // Create Supabase client
-  const supabase = createSupabaseClient(env);
-
   try {
+    // Log da requisição
+    console.log(`[${new Date().toISOString()}] [CLOUDFLARE_API] 📥 Nova requisição:`, {
+      method: request.method,
+      url: request.url,
+      userAgent: request.headers.get('User-Agent'),
+      origin: request.headers.get('Origin'),
+      referer: request.headers.get('Referer')
+    });
+
+    // Handle CORS preflight
+    const corsResponse = handleCORS(request);
+    if (corsResponse) {
+      console.log(`[${new Date().toISOString()}] [CLOUDFLARE_API] ✅ CORS preflight respondido`);
+      return corsResponse;
+    }
+
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.replace('/api/', '').split('/').filter(Boolean);
+
+    // Verificar variáveis de ambiente
+    if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_ANON_KEY) {
+      console.error(`[${new Date().toISOString()}] [CLOUDFLARE_API] ❌ Variáveis de ambiente faltando:`, {
+        hasSupabaseUrl: !!env.VITE_SUPABASE_URL,
+        hasSupabaseKey: !!env.VITE_SUPABASE_ANON_KEY
+      });
+      return errorResponse('Configuração do servidor incompleta', 500);
+    }
+
+    // Create Supabase client
+    const supabase = createSupabaseClient(env);
+
+    let response;
+    
     // Route to appropriate handler
     if (pathSegments.length === 0 || pathSegments[0] === 'health') {
-      return handleHealth();
+      response = handleHealth();
     } else if (pathSegments[0] === 'products') {
-      return await handleProducts(request, supabase, pathSegments.slice(1));
+      response = await handleProducts(request, supabase, pathSegments.slice(1));
     } else if (pathSegments[0] === 'quotes') {
-      return await handleQuotes(request, supabase, pathSegments.slice(1));
+      response = await handleQuotes(request, supabase, pathSegments.slice(1));
+    } else if (pathSegments[0] === 'proxy') {
+      response = await handleProxy(request, pathSegments.slice(1));
     } else {
-      return errorResponse('Endpoint not found', 404);
+      console.warn(`[${new Date().toISOString()}] [CLOUDFLARE_API] ⚠️ Endpoint não encontrado:`, {
+        path: url.pathname,
+        segments: pathSegments
+      });
+      response = errorResponse('Endpoint not found', 404);
     }
+
+    const duration = Date.now() - startTime;
+    console.log(`[${new Date().toISOString()}] [CLOUDFLARE_API] ✅ Requisição processada:`, {
+      method: request.method,
+      path: url.pathname,
+      duration: `${duration}ms`,
+      status: response.status || 200
+    });
+
+    return response;
   } catch (error) {
-    console.error('API error:', error);
-    return errorResponse('Internal server error');
+    const duration = Date.now() - startTime;
+    console.error(`[${new Date().toISOString()}] [CLOUDFLARE_API] 💥 Erro crítico:`, {
+      method: request.method,
+      url: request.url,
+      duration: `${duration}ms`,
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    return errorResponse('Internal server error', 500);
+   }
+ }
+
+// Proxy handler for images - resolve CORS issues
+async function handleProxy(request: Request, pathSegments: string[]) {
+  const url = new URL(request.url);
+  
+  if (pathSegments[0] === 'image') {
+    return await handleImageProxy(request, url);
+  } else if (pathSegments[0] === 'test') {
+    return await handleProxyTest(request, url);
+  } else {
+    return errorResponse('Proxy endpoint not found', 404);
+  }
+}
+
+// Handle image proxy requests
+async function handleImageProxy(request: Request, url: URL) {
+  try {
+    const imageUrl = url.searchParams.get('url');
+    
+    if (!imageUrl) {
+      return errorResponse('URL da imagem é obrigatória', 400);
+    }
+
+    // Validar se é uma URL válida
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(imageUrl);
+    } catch (error) {
+      return errorResponse('URL inválida', 400);
+    }
+
+    // Verificar se é HTTPS ou HTTP
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      return errorResponse('Protocolo não suportado. Use HTTP ou HTTPS', 400);
+    }
+
+    console.log(`[${new Date().toISOString()}] [CLOUDFLARE_PROXY] 🖼️ Fazendo proxy de imagem:`, {
+      originalUrl: imageUrl,
+      hostname: parsedUrl.hostname,
+      protocol: parsedUrl.protocol
+    });
+
+    // Fazer requisição para a imagem
+    const imageResponse = await fetch(imageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Referer': parsedUrl.origin
+      }
+    });
+
+    if (!imageResponse.ok) {
+      console.error(`[${new Date().toISOString()}] [CLOUDFLARE_PROXY] ❌ Erro ao buscar imagem:`, {
+        status: imageResponse.status,
+        statusText: imageResponse.statusText,
+        url: imageUrl
+      });
+      return errorResponse(`Imagem não encontrada (${imageResponse.status})`, imageResponse.status);
+    }
+
+    // Verificar se é uma imagem
+    const contentType = imageResponse.headers.get('content-type');
+    if (!contentType || !contentType.startsWith('image/')) {
+      console.error(`[${new Date().toISOString()}] [CLOUDFLARE_PROXY] ❌ Não é uma imagem:`, {
+        contentType,
+        url: imageUrl
+      });
+      return errorResponse('URL não aponta para uma imagem válida', 400);
+    }
+
+    console.log(`[${new Date().toISOString()}] [CLOUDFLARE_PROXY] ✅ Imagem encontrada:`, {
+      contentType,
+      size: imageResponse.headers.get('content-length'),
+      url: imageUrl
+    });
+
+    // Criar resposta com headers CORS apropriados
+    const proxyResponse = new Response(imageResponse.body, {
+      status: imageResponse.status,
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=86400', // Cache por 24 horas
+        'X-Content-Type-Options': 'nosniff',
+        'Cross-Origin-Resource-Policy': 'cross-origin',
+        'Cross-Origin-Embedder-Policy': 'unsafe-none',
+        'Cross-Origin-Opener-Policy': 'unsafe-none',
+        'Referrer-Policy': 'no-referrer-when-downgrade',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'X-Proxy-Cache': 'MISS',
+        'X-Proxy-Source': 'cloudflare-functions',
+        ...corsHeaders,
+      },
+    });
+
+    return proxyResponse;
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] [CLOUDFLARE_PROXY] 💥 Erro crítico no proxy:`, {
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    return errorResponse('Erro ao fazer proxy da imagem', 500);
+  }
+}
+
+// Handle proxy test requests
+async function handleProxyTest(request: Request, url: URL) {
+  try {
+    const imageUrl = url.searchParams.get('url');
+    
+    if (!imageUrl) {
+      return apiResponse({
+        success: false,
+        error: 'URL da imagem é obrigatória'
+      }, 400);
+    }
+
+    // Validar URL
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(imageUrl);
+    } catch (error) {
+      return apiResponse({
+        success: false,
+        valid: false,
+        error: 'URL inválida',
+        url: imageUrl
+      });
+    }
+
+    console.log(`[${new Date().toISOString()}] [CLOUDFLARE_PROXY] 🧪 Testando URL:`, {
+      url: imageUrl,
+      hostname: parsedUrl.hostname
+    });
+
+    // Fazer requisição HEAD para testar
+    const testResponse = await fetch(imageUrl, { 
+      method: 'HEAD',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    const contentType = testResponse.headers.get('content-type');
+    const contentLength = testResponse.headers.get('content-length');
+    
+    const result = {
+      success: true,
+      valid: testResponse.ok && contentType?.startsWith('image/'),
+      status: testResponse.status,
+      contentType,
+      contentLength,
+      url: imageUrl,
+      hostname: parsedUrl.hostname
+    };
+
+    console.log(`[${new Date().toISOString()}] [CLOUDFLARE_PROXY] 📊 Resultado do teste:`, result);
+
+    return apiResponse(result);
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] [CLOUDFLARE_PROXY] ❌ Erro no teste:`, error);
+    return apiResponse({
+      success: false,
+      valid: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      url: url.searchParams.get('url')
+    });
   }
 }

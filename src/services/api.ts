@@ -1,6 +1,22 @@
 // Serviço de API para comunicação com o backend
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5175/api';
+// Detectar ambiente e configurar URL da API
+const getApiBaseUrl = () => {
+  // Se VITE_API_URL está definida, usar ela
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Se estamos em produção (domínio não é localhost), usar API do Cloudflare
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+    return `${window.location.origin}/api`;
+  }
+  
+  // Fallback para desenvolvimento
+  return 'http://localhost:5175/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Tipos para as respostas da API
 interface ApiResponse<T> {
@@ -25,39 +41,91 @@ interface PaginatedResponse<T> {
   };
 }
 
-// Função auxiliar para fazer requisições HTTP
+// Função auxiliar para fazer requisições HTTP com retry logic
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retries: number = 3
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       ...options.headers,
     },
+    timeout: 30000, // 30 segundos
     ...options,
   };
 
-  try {
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`[${new Date().toISOString()}] [API_REQUEST] 🔄 Tentativa ${attempt}/${retries}:`, {
+        url,
+        method: config.method || 'GET',
+        baseUrl: API_BASE_URL
+      });
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
+      const response = await fetch(url, {
+        ...config,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Erro desconhecido');
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Resposta não é JSON válido');
+      }
+      
+      const data = await response.json();
+      
+      console.log(`[${new Date().toISOString()}] [API_REQUEST] ✅ Sucesso:`, {
+        url,
+        method: config.method || 'GET',
+        status: response.status
+      });
+      
+      return data;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Erro desconhecido');
+      
+      console.error(`[${new Date().toISOString()}] [API_REQUEST] ❌ Tentativa ${attempt}/${retries} falhou:`, {
+        url,
+        method: config.method || 'GET',
+        error: lastError.message,
+        attempt,
+        willRetry: attempt < retries
+      });
+
+      // Se não é a última tentativa, aguardar antes de tentar novamente
+      if (attempt < retries) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Backoff exponencial, máximo 5s
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
-    
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error(`[${new Date().toISOString()}] [API_REQUEST] ❌ Falha na requisição da API:`, {
-      url,
-      method: config.method || 'GET',
-      error: error instanceof Error ? error.message : 'Erro desconhecido',
-      timestamp: new Date().toISOString()
-    });
-    throw error;
   }
+
+  // Se chegou aqui, todas as tentativas falharam
+  console.error(`[${new Date().toISOString()}] [API_REQUEST] 💥 Todas as tentativas falharam:`, {
+    url,
+    method: config.method || 'GET',
+    finalError: lastError?.message,
+    retries
+  });
+  
+  throw lastError || new Error('Falha na requisição da API após múltiplas tentativas');
 }
 
 // Serviços de Produtos

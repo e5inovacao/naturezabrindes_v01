@@ -10,6 +10,22 @@ import { Product, ProductCategory, SustainabilityFeature } from '../../shared/ty
 import { PRODUCT_CATEGORIES, SUSTAINABILITY_FEATURES } from '../constants';
 import { productsApi } from '../services/api';
 
+// Importar função para obter URL da API
+const getApiBaseUrl = () => {
+  // Se VITE_API_URL está definida, usar ela
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Se estamos em produção (domínio não é localhost), usar API do Cloudflare
+  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+    return `${window.location.origin}/api`;
+  }
+  
+  // Fallback para desenvolvimento
+  return 'http://localhost:5175/api';
+};
+
 // Função para normalizar texto removendo acentos
 function normalizeText(text: string): string {
   return text
@@ -143,7 +159,7 @@ export default function Catalog() {
           domain: url.hostname,
           action: 'proxy_image'
         });
-        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5175/api';
+        const API_BASE_URL = getApiBaseUrl();
         return `${API_BASE_URL}/proxy/image?url=${encodeURIComponent(imageUrl)}`;
       }
       

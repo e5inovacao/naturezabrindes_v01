@@ -52,40 +52,32 @@ const HighlightedProducts: React.FC<HighlightedProductsProps> = ({ limit = 6 }) 
   }, [limit]);
 
   const updateScrollButtons = () => {
-    // Para navegação contínua, sempre permitir scroll em ambas as direções
-    setCanScrollLeft(true);
-    setCanScrollRight(true);
+    if (carouselRef.current) {
+      const container = carouselRef.current;
+      const scrollLeft = container.scrollLeft;
+      const maxScrollLeft = container.scrollWidth - container.clientWidth;
+      
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < maxScrollLeft);
+    }
   };
 
   const scroll = (direction: 'left' | 'right') => {
-    if (carouselRef.current && products.length > 0) {
+    if (carouselRef.current) {
       const container = carouselRef.current;
-      const cardWidth = 320; // Largura do card + gap
+      const cardWidth = 324; // 300px (largura do card) + 24px (gap)
+      const scrollAmount = cardWidth * 2; // Scroll 2 cards por vez
       
       if (direction === 'left') {
-        // Mover o último card para o início (carrossel infinito)
-        const lastCard = container.lastElementChild as HTMLElement;
-        if (lastCard) {
-          container.insertBefore(lastCard, container.firstChild);
-          container.scrollLeft += cardWidth;
-          container.scrollTo({
-            left: container.scrollLeft - cardWidth,
-            behavior: 'smooth'
-          });
-        }
+        container.scrollTo({
+          left: container.scrollLeft - scrollAmount,
+          behavior: 'smooth'
+        });
       } else {
-        // Mover o primeiro card para o final (carrossel infinito)
-        const firstCard = container.firstElementChild as HTMLElement;
-        if (firstCard) {
-          container.scrollTo({
-            left: container.scrollLeft + cardWidth,
-            behavior: 'smooth'
-          });
-          setTimeout(() => {
-            container.appendChild(firstCard);
-            container.scrollLeft -= cardWidth;
-          }, 300);
-        }
+        container.scrollTo({
+          left: container.scrollLeft + scrollAmount,
+          behavior: 'smooth'
+        });
       }
     }
   };
@@ -94,9 +86,13 @@ const HighlightedProducts: React.FC<HighlightedProductsProps> = ({ limit = 6 }) 
   const scrollRight = () => scroll('right');
 
   useEffect(() => {
-    // Para navegação contínua, sempre permitir scroll em ambas as direções
-    setCanScrollLeft(true);
-    setCanScrollRight(true);
+    updateScrollButtons();
+    
+    const container = carouselRef.current;
+    if (container) {
+      container.addEventListener('scroll', updateScrollButtons);
+      return () => container.removeEventListener('scroll', updateScrollButtons);
+    }
   }, [products]);
 
   if (loading) {
@@ -174,21 +170,25 @@ const HighlightedProducts: React.FC<HighlightedProductsProps> = ({ limit = 6 }) 
         
         <div className="relative">
           {/* Botões de navegação */}
-          <button
-            onClick={scrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full shadow-lg transition-all duration-200 bg-white text-gray-700 hover:bg-gray-50 hover:shadow-xl"
-            style={{ marginLeft: '-20px' }}
-          >
-            <ChevronLeft size={24} />
-          </button>
+          {canScrollLeft && (
+            <button
+              onClick={scrollLeft}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full shadow-lg transition-all duration-200 bg-white text-gray-700 hover:bg-gray-50 hover:shadow-xl"
+              style={{ marginLeft: '-20px' }}
+            >
+              <ChevronLeft size={24} />
+            </button>
+          )}
           
-          <button
-            onClick={scrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full shadow-lg transition-all duration-200 bg-white text-gray-700 hover:bg-gray-50 hover:shadow-xl"
-            style={{ marginRight: '-20px' }}
-          >
-            <ChevronRight size={24} />
-          </button>
+          {canScrollRight && (
+            <button
+              onClick={scrollRight}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full shadow-lg transition-all duration-200 bg-white text-gray-700 hover:bg-gray-50 hover:shadow-xl"
+              style={{ marginRight: '-20px' }}
+            >
+              <ChevronRight size={24} />
+            </button>
+          )}
 
           {/* Carrossel */}
           <div 
