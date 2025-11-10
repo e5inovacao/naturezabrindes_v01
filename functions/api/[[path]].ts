@@ -553,6 +553,11 @@ export async function onRequest(context: any) {
     if (pathSegments.length === 0 || pathSegments[0] === 'health') {
       response = await handleHealth(env);
     } else if (pathSegments[0] === 'products') {
+      // Deixe que a rota dedicada functions/api/products.ts responda a GET sem path extra
+      if (request.method === 'GET' && pathSegments.length === 1) {
+        return await (await import('./products')).onRequestGet({ env, request } as any);
+      }
+      // Para subrotas como /featured, /highlighted, /categories e /:id mantém o handler atual
       response = await handleProducts(request, supabase, pathSegments.slice(1));
     } else if (pathSegments[0] === 'quotes') {
       response = await handleQuotes(request, supabase, pathSegments.slice(1));
