@@ -2,18 +2,18 @@
 
 // Detectar ambiente e configurar URL da API
 const getApiBaseUrl = () => {
-  // Se VITE_API_URL está definida, usar ela
+  // Produção: sempre usar o mesmo domínio (Cloudflare Pages) e evitar localhost
+  if (typeof window !== 'undefined' && !/^(localhost|127\.0\.0\.1)/.test(window.location.hostname)) {
+    return `${window.location.origin}/api`;
+  }
+
+  // Desenvolvimento: usar variável configurada ou fallback para o servidor local
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
-  // Se estamos em produção (domínio não é localhost), usar API do Cloudflare
-  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
-    return `${window.location.origin}/api`;
-  }
-  
-  // Fallback para desenvolvimento
-  return 'http://localhost:5175/api';
+
+  // Fallback para desenvolvimento (Express API local)
+  return 'http://localhost:3005/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();

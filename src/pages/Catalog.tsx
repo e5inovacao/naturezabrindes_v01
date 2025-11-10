@@ -10,20 +10,19 @@ import { Product, ProductCategory, SustainabilityFeature } from '../../shared/ty
 import { PRODUCT_CATEGORIES, SUSTAINABILITY_FEATURES } from '../constants';
 import { productsApi } from '../services/api';
 
-// Importar função para obter URL da API
+// Importar função para obter URL da API (mesma lógica de services/api.ts)
 const getApiBaseUrl = () => {
-  // Se VITE_API_URL está definida, usar ela
+  // Produção: usar domínio atual (Cloudflare Pages)
+  if (typeof window !== 'undefined' && !/^(localhost|127\.0\.0\.1)/.test(window.location.hostname)) {
+    return `${window.location.origin}/api`;
+  }
+
+  // Desenvolvimento: VITE_API_URL se definida, senão fallback
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
-  // Se estamos em produção (domínio não é localhost), usar API do Cloudflare
-  if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
-    return `${window.location.origin}/api`;
-  }
-  
-  // Fallback para desenvolvimento
-  return 'http://localhost:5175/api';
+
+  return 'http://localhost:3005/api';
 };
 
 // Função para normalizar texto removendo acentos
