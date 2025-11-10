@@ -23,19 +23,16 @@ function handleCORS(request: Request) {
   return null;
 }
 
-// Create Supabase client (edge-safe)
+// Create Supabase client
 function createSupabaseClient(env: any) {
-  const supabaseUrl = env.SUPABASE_URL;
-  const supabaseKey = env.SUPABASE_ANON_KEY;
-
+  const supabaseUrl = env.VITE_SUPABASE_URL;
+  const supabaseKey = env.VITE_SUPABASE_ANON_KEY;
+  
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing. Please configure SUPABASE_URL and SUPABASE_ANON_KEY in Cloudflare Pages environment variables.');
+    throw new Error('Supabase configuration missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Cloudflare Pages environment variables.');
   }
-
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false },
-    global: { fetch },
-  });
+  
+  return createClient(supabaseUrl, supabaseKey);
 }
 
 // API Response helper
@@ -64,78 +61,6 @@ function errorResponse(message: string, status = 500) {
   return apiResponse(errorData, status);
 }
 
-// ----- Helpers para produtos ecológicos (ecologic_products_site) -----
-function generateConsistentEcologicId(data: any): string {
-  const baseId = data?.codigo || (data?.id ? String(data.id) : 'unknown');
-  return `ecologic-${baseId}`;
-}
-
-function mapEcologicToProduct(data: any) {
-  const images: string[] = [];
-  if (data?.img_0) images.push(data.img_0);
-  if (data?.img_1) images.push(data.img_1);
-  if (data?.img_2) images.push(data.img_2);
-
-  const colorVariations: { color: string; image: string }[] = [];
-  if (Array.isArray(data?.variacoes)) {
-    for (const v of data.variacoes) {
-      if (v?.cor && v?.link_image) {
-        colorVariations.push({ color: v.cor, image: v.link_image });
-        if (!images.includes(v.link_image)) images.push(v.link_image);
-      }
-    }
-  }
-
-  // Categoria básica a partir de "categoria" ou inferida pelo título
-  let category = 'ecologicos';
-  if (typeof data?.categoria === 'string') {
-    const c = data.categoria.toLowerCase();
-    if (c.includes('caneta') || c.includes('caderno') || c.includes('papelaria') || c.includes('bloco') || c.includes('agenda')) {
-      category = 'papelaria';
-    } else if (c.includes('bolsa') || c.includes('mochila') || c.includes('sacola') || c.includes('nécessaire') || c.includes('necessaire')) {
-      category = 'acessorios';
-    } else if (c.includes('caneca') || c.includes('garrafa') || c.includes('copo')) {
-      category = 'casa-escritorio';
-    }
-  } else if (typeof data?.titulo === 'string') {
-    const t = data.titulo.toLowerCase();
-    if (t.includes('caneta') || t.includes('caderno') || t.includes('agenda')) category = 'papelaria';
-    if (t.includes('garrafa') || t.includes('copo') || t.includes('caneca')) category = 'casa-escritorio';
-    if (t.includes('bolsa') || t.includes('sacola') || t.includes('mochila')) category = 'acessorios';
-  }
-
-  const featured = data?.promocao === true || data?.promocao === 'true' || data?.promocao === 1;
-
-  return {
-    id: generateConsistentEcologicId(data),
-    name: data?.titulo || 'Produto Ecológico',
-    description: data?.descricao || '',
-    category,
-    images,
-    sustainabilityFeatures: ['sustentavel'],
-    customizationOptions: [],
-    price: typeof data?.preco === 'number' ? data.preco : (data?.preco ? parseFloat(String(data.preco)) || 0 : 0),
-    inStock: data?.status !== 'indisponivel' && data?.status !== 'esgotado',
-    featured,
-    isEcological: true,
-    isExternal: false,
-    externalSource: 'Supabase',
-    supplier: 'Ecologic',
-    supplierCode: data?.codigo || null,
-    reference: data?.codigo || null,
-    ecologicDatabaseId: data?.id,
-    allImages: images,
-    dimensions: {
-      height: data?.altura ? parseFloat(String(data.altura)) : undefined,
-      width: data?.largura ? parseFloat(String(data.largura)) : undefined,
-      length: data?.comprimento ? parseFloat(String(data.comprimento)) : undefined,
-      weight: data?.peso ? parseFloat(String(data.peso)) : undefined,
-    },
-    primaryColor: data?.cor_web_principal || undefined,
-    colorVariations,
-  };
-}
-
 // Products API handlers
 async function handleProducts(request: Request, supabase: any, pathSegments: string[]) {
   const url = new URL(request.url);
@@ -147,212 +72,137 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
       if (pathSegments.length === 0) {
         // GET /api/products - List products with filters
         const category = url.searchParams.get('category');
+        const features = url.searchParams.get('features');
         const search = url.searchParams.get('search');
         const featured = url.searchParams.get('featured');
-        const pageRaw = url.searchParams.get('page') || '1';
-        const limitRaw = url.searchParams.get('limit') || '20';
-        const page = Math.max(1, parseInt(pageRaw, 10) || 1);
-        const limit = Math.max(1, Math.min(parseInt(limitRaw, 10) || 20, 50));
+        const page = parseInt(url.searchParams.get('page') || '1');
+        const limit = parseInt(url.searchParams.get('limit') || '20');
+        const sort = url.searchParams.get('sort') || 'name';
 
-        // Preferir tabela ecologic_products_site
-        try {
-          let eco = supabase.from('ecologic_products_site').select('*');
-          if (category) eco = eco.ilike('categoria', `%${category}%`);
-          if (search) {
-            const q = search.trim();
-            if (q) eco = eco.or(`titulo.ilike.%${q}%,descricao.ilike.%${q}%`);
-          }
-          if (featured === 'true') eco = eco.eq('promocao', true);
+        // Lista de produtos com filtros usando tabela correta `products`
+        let query = supabase.from('products').select('*', { count: 'exact' });
 
-          const fromIdx = (page - 1) * limit;
-          const toIdx = fromIdx + limit - 1;
-          eco = eco.range(fromIdx, toIdx).order('titulo');
-
-          const { data, error } = await eco;
-          if (error) {
-            console.error(`[${new Date().toISOString()}] [CLOUDFLARE_API] ❌ Supabase erro em ecologic_products_site:`, error);
-            throw new Error(error?.message || 'Erro ao consultar ecologic_products_site');
-          }
-          const items = (data || []).map(mapEcologicToProduct);
-          // Tentar obter a contagem total de forma resiliente (opcional)
-          let totalCount = items.length;
-          try {
-            const { count: c, error: countErr } = await supabase
-              .from('ecologic_products_site')
-              .select('id', { count: 'exact', head: true });
-            if (!countErr && typeof c === 'number') totalCount = c;
-          } catch {}
-
-          return apiResponse({
-            success: true,
-            data: {
-              items,
-              pagination: {
-                currentPage: page,
-                totalPages: Math.ceil((totalCount || 0) / limit),
-                totalItems: totalCount || 0,
-                itemsPerPage: limit,
-                hasNextPage: page * limit < (totalCount || 0),
-                hasPrevPage: page > 1,
-              },
-            },
-          });
-        } catch (err: any) {
-          console.warn(`[${new Date().toISOString()}] [CLOUDFLARE_API] ⚠️ Falha ao consultar ecologic_products_site; tentando tabela products:`, err?.message || err);
-          // Fallback para tabela products
-          const sort = url.searchParams.get('sort') || 'name';
-          let query = supabase.from('products').select('*', { count: 'exact' });
-          if (category) query = query.eq('category_id', category);
-          if (search) {
-            const q = search.trim();
-            if (q) query = query.or(`name.ilike.%${q}%,description.ilike.%${q}%`);
-          }
-          if (featured === 'true') query = query.eq('featured', true);
-          const from = (page - 1) * limit;
-          const to = from + limit - 1;
-          query = query.range(from, to).order(sort);
-          const { data, error, count } = await query;
-          if (error) {
-            console.error(`[${new Date().toISOString()}] [CLOUDFLARE_API] ❌ Supabase erro em products:`, error);
-            throw new Error(error?.message || 'Erro ao consultar products');
-          }
-          return apiResponse({
-            success: true,
-            data: {
-              items: data || [],
-              pagination: {
-                currentPage: page,
-                totalPages: Math.ceil((count || 0) / limit),
-                totalItems: count || 0,
-                itemsPerPage: limit,
-                hasNextPage: page * limit < (count || 0),
-                hasPrevPage: page > 1,
-              },
-            },
-          });
+        // Apply filters
+        if (category) {
+          // No schema `products`, usamos `category_id`
+          query = query.eq('category_id', category);
         }
+        if (features) {
+          // `features` é um array; usar contains quando possível
+          try {
+            const parts = features.split(',').map(p => p.trim()).filter(Boolean);
+            if (parts.length > 0) {
+              query = query.contains('features', parts.length === 1 ? [parts[0]] : parts);
+            }
+          } catch {
+            // fallback silencioso sem filtro
+          }
+        }
+        if (search) {
+          query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+        }
+        if (featured === 'true') {
+          query = query.eq('featured', true);
+        }
+
+        // Apply pagination
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+        query = query.range(from, to);
+
+        // Apply sorting
+        query = query.order(sort);
+
+        const { data, error, count } = await query;
+
+        if (error) throw error;
+
+        return apiResponse({
+          success: true,
+          data: {
+            items: data || [],
+            pagination: {
+              currentPage: page,
+              totalPages: Math.ceil((count || 0) / limit),
+              totalItems: count || 0,
+              itemsPerPage: limit,
+              hasNextPage: page * limit < (count || 0),
+              hasPrevPage: page > 1,
+            },
+          },
+        });
       } else if (pathSegments[0] === 'featured' && pathSegments[1] === 'list') {
         // GET /api/products/featured/list
-        const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '4', 10) || 4, 50));
+        const limit = parseInt(url.searchParams.get('limit') || '4');
+        
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('featured', true)
+          .limit(limit);
 
-        try {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .eq('featured', true)
-            .limit(limit);
-          if (error) throw error;
-          return apiResponse({ success: true, data: data || [] });
-        } catch (err: any) {
-          const msg = err?.message || '';
-          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
-            // Fallback: pegar itens da tabela ecologic_products_site
-            const { data } = await supabase
-              .from('ecologic_products_site')
-              .select('*')
-              .limit(limit);
-            const items = (data || []).map(mapEcologicToProduct).map((p: any) => ({ ...p, featured: true }));
-            return apiResponse({ success: true, data: items });
-          }
-          throw err;
-        }
+        if (error) throw error;
+
+        return apiResponse({
+          success: true,
+          data: data || [],
+        });
       } else if (pathSegments[0] === 'highlighted') {
         // GET /api/products/highlighted
-        const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '6', 10) || 6, 50));
+        const limit = parseInt(url.searchParams.get('limit') || '6');
+        
+        // Fallback: usar produtos com `featured=true` como "highlighted"
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('featured', true)
+          .limit(limit);
 
-        try {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .eq('featured', true)
-            .limit(limit);
-          if (error) throw error;
-          return apiResponse({ success: true, data: data || [] });
-        } catch (err: any) {
-          const msg = err?.message || '';
-          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
-            // Fallback: usar produtos em destaque + join com ecologic_products_site
-            const { data, error } = await supabase
-              .from('produtos_destaque')
-              .select(`*, ecologic_products_site!produtos_destaque_id_produto_fkey(*)`)
-              .limit(limit);
-            if (error) throw error;
-            const items = (data || [])
-              .map((item: any) => item?.ecologic_products_site ? mapEcologicToProduct(item.ecologic_products_site) : null)
-              .filter(Boolean);
-            return apiResponse({ success: true, data: items });
-          }
-          throw err;
-        }
+        if (error) throw error;
+
+        return apiResponse({
+          success: true,
+          data: data || [],
+        });
       } else if (pathSegments[0] === 'categories' && pathSegments[1] === 'list') {
         // GET /api/products/categories/list
-        try {
-          const { data, error } = await supabase
-            .from('products')
-            .select('category_id')
-            .not('category_id', 'is', null);
-          if (error) throw error;
-          const categories = [...new Set((data || []).map((item: any) => item.category_id))];
-          return apiResponse({ success: true, data: categories });
-        } catch (err: any) {
-          const msg = err?.message || '';
-          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
-            // Fallback: categorias distintas a partir de ecologic_products_site
-            const { data } = await supabase
-              .from('ecologic_products_site')
-              .select('categoria');
-            const categoriesSet = new Set<string>();
-            (data || []).forEach((item: any) => {
-              if (item?.categoria && typeof item.categoria === 'string') {
-                categoriesSet.add(item.categoria.trim());
-              }
-            });
-            const categories = Array.from(categoriesSet);
-            return apiResponse({ success: true, data: categories });
-          }
-          throw err;
-        }
+        // Extrair categorias distintas a partir de `category_id`
+        const { data, error } = await supabase
+          .from('products')
+          .select('category_id')
+          .not('category_id', 'is', null);
+
+        if (error) throw error;
+
+        const categories = [...new Set((data || []).map((item: any) => item.category_id))];
+
+        return apiResponse({
+          success: true,
+          data: categories,
+        });
       } else if (pathSegments.length === 1) {
         // GET /api/products/:id
         const productId = pathSegments[0];
-        try {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .eq('id', productId)
-            .single();
-          if (error) throw error;
-          return apiResponse({ success: true, data });
-        } catch (err: any) {
-          const msg = err?.message || '';
-          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
-            // Buscar no ecologic_products_site por código ou id a partir do padrão ecologic-*
-            const base = productId.startsWith('ecologic-') ? productId.replace('ecologic-', '') : productId;
-            const numberBase = Number(base);
-            const hasNumber = !Number.isNaN(numberBase);
-            const orExpr = hasNumber ? `codigo.eq.${base},id.eq.${numberBase}` : `codigo.eq.${base}`;
-            const { data } = await supabase
-              .from('ecologic_products_site')
-              .select('*')
-              .or(orExpr)
-              .limit(1);
-            const found = Array.isArray(data) ? data[0] : null;
-            if (!found) return errorResponse('Produto não encontrado', 404);
-            const mapped = mapEcologicToProduct(found);
-            return apiResponse({ success: true, data: mapped });
-          }
-          throw err;
-        }
+        
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', productId)
+          .single();
+
+        if (error) throw error;
+
+        return apiResponse({
+          success: true,
+          data: data,
+        });
       }
     }
 
     return errorResponse('Endpoint not found', 404);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Products API error:', error);
-    const msg = (error && (error.message || error.error)) ? (error.message || error.error) : (() => {
-      try { return typeof error === 'string' ? error : JSON.stringify(error); } catch { return 'Internal server error'; }
-    })();
-    return errorResponse(msg);
+    return errorResponse('Internal server error');
   }
 }
 
@@ -465,48 +315,11 @@ async function handleQuotes(request: Request, supabase: any, pathSegments: strin
 }
 
 // Health check
-async function handleHealth(env?: any) {
-  const hasUrl = !!(env && env.SUPABASE_URL);
-  const hasKey = !!(env && env.SUPABASE_ANON_KEY);
-
-  let dbOk = false;
-  let dbError: string | undefined;
-
-  if (hasUrl && hasKey) {
-    try {
-      const supabase = createSupabaseClient(env);
-      let { error } = await supabase
-        .from('products')
-        .select('id')
-        .limit(1);
-      if (error) {
-        // Tentar tabela real utilizada
-        const tryAlt = await supabase
-          .from('ecologic_products_site')
-          .select('id')
-          .limit(1);
-        if (!tryAlt.error) dbOk = true;
-        else dbError = tryAlt.error.message || error.message || 'Erro desconhecido no Supabase';
-      } else {
-        dbOk = true;
-      }
-    } catch (err: any) {
-      dbError = err?.message || 'Falha ao conectar ao Supabase';
-    }
-  }
-
+function handleHealth() {
   return apiResponse({
-    success: hasUrl && hasKey && dbOk,
-    message: 'API health check',
+    success: true,
+    message: 'API is healthy',
     timestamp: new Date().toISOString(),
-    env: {
-      hasSupabaseUrl: hasUrl,
-      hasSupabaseAnonKey: hasKey,
-    },
-    db: {
-      ok: dbOk,
-      error: dbError,
-    },
   });
 }
 
@@ -536,10 +349,10 @@ export async function onRequest(context: any) {
     const pathSegments = url.pathname.replace('/api/', '').split('/').filter(Boolean);
 
     // Verificar variáveis de ambiente
-    if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_ANON_KEY) {
       console.error(`[${new Date().toISOString()}] [CLOUDFLARE_API] ❌ Variáveis de ambiente faltando:`, {
-        hasSupabaseUrl: !!env.SUPABASE_URL,
-        hasSupabaseKey: !!env.SUPABASE_ANON_KEY
+        hasSupabaseUrl: !!env.VITE_SUPABASE_URL,
+        hasSupabaseKey: !!env.VITE_SUPABASE_ANON_KEY
       });
       return errorResponse('Configuração do servidor incompleta', 500);
     }
@@ -551,13 +364,8 @@ export async function onRequest(context: any) {
     
     // Route to appropriate handler
     if (pathSegments.length === 0 || pathSegments[0] === 'health') {
-      response = await handleHealth(env);
+      response = handleHealth();
     } else if (pathSegments[0] === 'products') {
-      // Deixe que a rota dedicada functions/api/products.ts responda a GET sem path extra
-      if (request.method === 'GET' && pathSegments.length === 1) {
-        return await (await import('./products')).onRequestGet({ env, request } as any);
-      }
-      // Para subrotas como /featured, /highlighted, /categories e /:id mantém o handler atual
       response = await handleProducts(request, supabase, pathSegments.slice(1));
     } else if (pathSegments[0] === 'quotes') {
       response = await handleQuotes(request, supabase, pathSegments.slice(1));

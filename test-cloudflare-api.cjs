@@ -1,14 +1,5 @@
 // Teste de endpoints de produção da Cloudflare Pages Function
-// Usa fetch nativo do Node 18+; faz fallback para node-fetch quando necessário
-let fetchFn = globalThis.fetch;
-if (!fetchFn) {
-  try {
-    fetchFn = require('node-fetch').default;
-  } catch (e) {
-    console.error('node-fetch não disponível e fetch nativo ausente');
-    process.exit(1);
-  }
-}
+const { default: fetch } = require('node-fetch');
 
 const API_BASE = process.env.API_BASE || 'https://naturezabrindes.com.br/api';
 
@@ -16,7 +7,7 @@ async function check(path) {
   const url = API_BASE + path;
   const start = Date.now();
   try {
-    const resp = await fetchFn(url, { method: 'GET' });
+    const resp = await fetch(url, { method: 'GET' });
     const ms = Date.now() - start;
     const ct = resp.headers.get('content-type') || '';
     let body;
@@ -53,7 +44,4 @@ async function check(path) {
   // Detalhe das respostas com erro
   for (const r of results.filter(x => !x.ok)) {
     console.log(`\n--- Detalhes ${r.name} ---`);
-    const bodyOut = typeof r.body === 'string' ? r.body : JSON.stringify(r.body, null, 2);
-    console.log(bodyOut || '(sem corpo)');
-  }
-})();
+    console.log(typeof r.body === 'string' ? r.body : JSON.stringify(r.body, null,
