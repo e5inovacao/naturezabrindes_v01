@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagnóstico API Cloudflare</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Arial, sans-serif; padding: 20px; line-height: 1.5; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    .ok { color: #0f766e; }
+    .err { color: #dc2626; }
+    .warn { color: #a16207; }
+    code, pre { background:#f8fafc; padding:8px; border-radius:6px; display:block; white-space:pre-wrap; }
+    .card { border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin:12px 0; }
+    .grid { display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  </style>
+</head>
+<body>
+  <h1>Diagnóstico de API (Cloudflare Pages + Supabase)</h1>
+  <div id="summary" class="card"></div>
+  <div id="results" class="grid"></div>
+  <script>
+    (async () => {
+      const log = (level, msg, extra) => {
+        const tag = `[TEST-${level.toUpperCase()}]`;
+        if (level === 'error') console.error(tag, msg, extra || '');
+        else if (level === 'warn') console.warn(tag, msg, extra || '');
+        else console.log(tag, msg, extra || '');
+      };
+
+      // Base da API conforme lógica do frontend
+      const isLocal = location.hostname.includes('localhost') || location.hostname.startsWith('127.');
+      const apiBase = isLocal ? 'http://localhost:5175/api' : `${location.origin}/api`;
+
+      const summaryEl = document.getElementById('summary');
+      summaryEl.innerHTML = `<strong>Host:</strong> ${location.origin}<br/><strong>API Base:</strong> <code>${apiBase}</code>`;
+
+      const tests = [
+        { name: 'Health', path: '/health' },
+        { name: 'Products (lista)', path: '/products?limit=12' },
+        { name: 'Featured (antigo)', path: '/products/featured/list?limit=6' },
+        { name: 'Highlighted (novo)', path: '/products/highlighted?limit=6' },
+        { name: 'Categorias', path: '/products/categories/list' },
+      ];
+
+      const container = document.getElementById('results');
+
+      async function runTest(t) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<strong>${t.name}</strong><div id="status"></div><pre id="details"></pre>`;
+        container.appendChild(card);
+        const statusEl = card.querySelector('#status');
+        const detailsEl = card.querySelector('#details');
+
+        const url = apiBase + t.path;
+        let statusText = '';
+        try {
+          log('info', `Fetch ${url}`);
+          const resp = await fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' });
+          const ct = resp.headers.get('content-type') || '';
+          let body;
+          if (ct.includes('application/json')) body = await resp.json();
+          else body = await resp.text();
+
+          statusText = resp.ok ? `<span class='ok'>OK (${resp.status})</span>` : `<span class='err'>ERRO (${resp.status})</span>`;
+          statusEl.innerHTML = statusText + ` — <code>${t.path}</code>`;
+          detailsEl.textContent = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+
+          if (!resp.ok) log('error', `Falha ${t.name}`, { status: resp.status, body });
+          else log('info', `Sucesso ${t.name}`, { status: resp.status });
+        } catch (e) {
+          statusEl.innerHTML = `<span class='err'>EXCEÇÃO</span> — <code>${t.path}</code>`;
+          detailsEl.textContent = (e && e.message) ? e.message : String(e);
+          log('error', `Exceção ao chamar ${url}`, e);
+        }
+      }
+
+      // Rodar todos os testes em série
+      for (const t of tests) {
+        await runTest(t);
+      }
+
+      // Teste rápido de CORS: tentar OPTIONS em um endpoint
+      try {
+        const corsCard = document.createElement('div');
+        corsCard.className = 'card';
+        corsCard.innerHTML = `<strong>CORS (OPTIONS /products)</strong><div id='status'></div><pre id='details'></pre>`;
+        container.appendChild(corsCard);
+        const s = corsCard.querySelector('#status');
+        const d = corsCard.querySelector('#details');
+
+        const resp = await fetch(apiBase + '/products', { method: 'OPTIONS' });
+        s.innerHTML = resp.ok ? `<span class='ok'>OK (${resp.status})</span>` : `<span class='warn
