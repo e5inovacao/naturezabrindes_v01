@@ -323,16 +323,38 @@ async function handleQuotes(request: Request, supabase: any, pathSegments: strin
 }
 
 // Health check
-function handleHealth(env?: any) {
+async function handleHealth(env?: any) {
   const hasUrl = !!(env && env.SUPABASE_URL);
   const hasKey = !!(env && env.SUPABASE_ANON_KEY);
+
+  let dbOk = false;
+  let dbError: string | undefined;
+
+  if (hasUrl && hasKey) {
+    try {
+      const supabase = createSupabaseClient(env);
+      const { error } = await supabase
+        .from('products')
+        .select('id')
+        .limit(1);
+      if (!error) dbOk = true;
+      else dbError = error.message || 'Erro desconhecido no Supabase';
+    } catch (err: any) {
+      dbError = err?.message || 'Falha ao conectar ao Supabase';
+    }
+  }
+
   return apiResponse({
-    success: hasUrl && hasKey,
+    success: hasUrl && hasKey && dbOk,
     message: 'API health check',
     timestamp: new Date().toISOString(),
     env: {
       hasSupabaseUrl: hasUrl,
       hasSupabaseAnonKey: hasKey,
+    },
+    db: {
+      ok: dbOk,
+      error: dbError,
     },
   });
 }
@@ -378,7 +400,7 @@ export async function onRequest(context: any) {
     
     // Route to appropriate handler
     if (pathSegments.length === 0 || pathSegments[0] === 'health') {
-      response = handleHealth(env);
+      response = await handleHealth(env);
     } else if (pathSegments[0] === 'products') {
       response = await handleProducts(request, supabase, pathSegments.slice(1));
     } else if (pathSegments[0] === 'quotes') {
