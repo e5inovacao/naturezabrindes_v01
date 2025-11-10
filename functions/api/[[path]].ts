@@ -79,20 +79,30 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         const limit = parseInt(url.searchParams.get('limit') || '20');
         const sort = url.searchParams.get('sort') || 'name';
 
-        let query = supabase.from('produtos').select('*', { count: 'exact' });
+        // Lista de produtos com filtros usando tabela correta `products`
+        let query = supabase.from('products').select('*', { count: 'exact' });
 
         // Apply filters
         if (category) {
-          query = query.eq('categoria', category);
+          // No schema `products`, usamos `category_id`
+          query = query.eq('category_id', category);
         }
         if (features) {
-          query = query.ilike('caracteristicas', `%${features}%`);
+          // `features` é um array; usar contains quando possível
+          try {
+            const parts = features.split(',').map(p => p.trim()).filter(Boolean);
+            if (parts.length > 0) {
+              query = query.contains('features', parts.length === 1 ? [parts[0]] : parts);
+            }
+          } catch {
+            // fallback silencioso sem filtro
+          }
         }
         if (search) {
-          query = query.or(`nome.ilike.%${search}%,descricao.ilike.%${search}%`);
+          query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
         }
         if (featured === 'true') {
-          query = query.eq('destaque', true);
+          query = query.eq('featured', true);
         }
 
         // Apply pagination
@@ -126,9 +136,9 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         const limit = parseInt(url.searchParams.get('limit') || '4');
         
         const { data, error } = await supabase
-          .from('produtos')
+          .from('products')
           .select('*')
-          .eq('destaque', true)
+          .eq('featured', true)
           .limit(limit);
 
         if (error) throw error;
@@ -141,12 +151,11 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         // GET /api/products/highlighted
         const limit = parseInt(url.searchParams.get('limit') || '6');
         
+        // Fallback: usar produtos com `featured=true` como "highlighted"
         const { data, error } = await supabase
-          .from('produtos_destaque')
-          .select(`
-            *,
-            produtos (*)
-          `)
+          .from('products')
+          .select('*')
+          .eq('featured', true)
           .limit(limit);
 
         if (error) throw error;
@@ -157,14 +166,15 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         });
       } else if (pathSegments[0] === 'categories' && pathSegments[1] === 'list') {
         // GET /api/products/categories/list
+        // Extrair categorias distintas a partir de `category_id`
         const { data, error } = await supabase
-          .from('produtos')
-          .select('categoria')
-          .not('categoria', 'is', null);
+          .from('products')
+          .select('category_id')
+          .not('category_id', 'is', null);
 
         if (error) throw error;
 
-        const categories = [...new Set(data?.map(item => item.categoria))];
+        const categories = [...new Set((data || []).map((item: any) => item.category_id))];
 
         return apiResponse({
           success: true,
@@ -175,7 +185,7 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         const productId = pathSegments[0];
         
         const { data, error } = await supabase
-          .from('produtos')
+          .from('products')
           .select('*')
           .eq('id', productId)
           .single();
