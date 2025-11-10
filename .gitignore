@@ -19,7 +19,7 @@ dist-ssr
 .env.production
 .env.test
 .env.*.local
-.env.example
+!.env.example
 
 # Configuration files with sensitive data
 config.json

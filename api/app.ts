@@ -10,7 +10,6 @@ import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.ts';
 import productsRoutes from './routes/products.ts';
 import quotesRoutes from './routes/quotes.ts';
-import xbzRoutes from './routes/xbz.ts';
 import proxyRoutes from './routes/proxy.ts';
 
 // for esm mode
@@ -39,7 +38,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/quotes', quotesRoutes);
-app.use('/api/xbz', xbzRoutes);
 app.use('/api/proxy', proxyRoutes);
 
 /**

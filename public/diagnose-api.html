@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagnóstico API Natureza Brindes</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Arial, sans-serif; padding: 20px; line-height: 1.5; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    .ok { color: #0f766e; }
+    .err { color: #dc2626; }
+    .warn { color: #a16207; }
+    code, pre { background:#f8fafc; padding:8px; border-radius:6px; display:block; white-space:pre-wrap; }
+    .card { border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin:12px 0; }
+    .grid { display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .muted { color:#64748b; }
+    .row { display:flex; gap:8px; align-items:center; }
+    input { padding:6px 8px; width: 360px; }
+    button { padding:6px 12px; }
+  </style>
+</head>
+<body>
+  <h1>Diagnóstico de API (Cloudflare Pages + Supabase)</h1>
+  <div class="card">
+    <div class="row">
+      <label for="apiUrl"><strong>API Base</strong></label>
+      <input id="apiUrl" placeholder="https://naturezabrindes.com.br/api" />
+      <button id="setApi">Usar</button>
+      <span class="muted">Dica: também funciona com query `?api=`</span>
+    </div>
+  </div>
+  <div id="summary" class="card"></div>
+  <div id="results" class="grid"></div>
+  <script>
+    (async () => {
+      const getParam = (name) => new URL(location.href).searchParams.get(name);
+      const initialApi = getParam('api') || '';
+      const apiInput = document.getElementById('apiUrl');
+      const setBtn = document.getElementById('setApi');
+      const summaryEl = document.getElementById('summary');
+
+      // Base da API conforme lógica do frontend
+      const isLocal = location.hostname.includes('localhost') || location.hostname.startsWith('127.');
+      let apiBase = initialApi || (isLocal ? 'http://localhost:5175/api' : `${location.origin}/api`);
+      apiInput.value = apiBase;
+      function updateSummary() {
+        summaryEl.innerHTML = `<strong>Host:</strong> ${location.origin}<br/><strong>API Base:</strong> <code>${apiBase}</code>`;
+      }
+      updateSummary();
+      setBtn.onclick = () => { apiBase = apiInput.value.trim(); updateSummary(); runAll(); };
+
+      const tests = [
+        { name: 'Health', path: '/health' },
+        { name: 'Products (lista)', path: '/products?limit=12' },
+        { name: 'Featured (antigo)', path: '/products/featured/list?limit=6' },
+        { name: 'Highlighted (novo)', path: '/products/highlighted?limit=6' },
+        { name: 'Categorias', path: '/products/categories/list' },
+      ];
+
+      const container = document.getElementById('results');
+      container.innerHTML = '';
+
+      async function runTest(t) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<strong>${t.name}</strong><div id="status"></div><pre id="details"></pre>`;
+        container.appendChild(card);
+        const statusEl = card.querySelector('#status');
+        const detailsEl = card.querySelector('#details');
+
+        const url = apiBase + t.path;
+        try {
+          const resp = await fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' });
+          const ct = resp.headers.get('content-type') || '';
+          let body;
+          if (ct.includes('application/json')) body = await resp.json();
+          else body = await resp.text();
+
+          statusEl.innerHTML = resp.ok ? `<span class='ok'>OK (${resp.status})</span>` : `<span class='err'>ERRO (${resp.status})</span>`;
+          detailsEl.textContent = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+        } catch (e) {
+          statusEl.innerHTML = `<span class='err'>EXCEÇÃO</span> — <code>${t.path}</code>`;
+          detailsEl.textContent = (e && e.message) ? e.message : String(e);
+        }
+      }
+
+      async function runAll() {
+        container.innerHTML = '';
+        for (const t of tests) {
+          await runTest(t);
+        }
+        // Teste rápido de CORS: OPTIONS
+        const corsCard = document.createElement('div');
+        corsCard.className = 'card';
+        corsCard.innerHTML = `<strong>CORS (OPTIONS /products)</strong><div id='status'></div><pre id='details'></pre>`;
+        container.appendChild(corsCard);
+        const s = corsCard.querySelector('#status');
+        const d = corsCard.querySelector('#details');
+        try {
+          const resp = await fetch(apiBase + '/products', { method: 'OPTIONS' });
+          s.innerHTML = resp.ok ? `<span class='ok'>OK (${resp.status})</span>` : `<span class='warn'>${resp.status}</span>`;
+          d.textContent = [...resp.headers.entries()].map(([k,v]) => `${k}: ${v}`).join('\n');
+        } catch (e) {
+          s.innerHTML = `<span class='err'>EXCEÇÃO</span>`;
+          d.textContent = (e && e.message) ? e.message : String(e);
+        }
+      }
+
+      // Primeira execução
+      await runAll();
+    })();
+  </script>
+</body
