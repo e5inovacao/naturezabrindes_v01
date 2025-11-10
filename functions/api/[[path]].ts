@@ -23,16 +23,19 @@ function handleCORS(request: Request) {
   return null;
 }
 
-// Create Supabase client
+// Create Supabase client (edge-safe)
 function createSupabaseClient(env: any) {
-  const supabaseUrl = env.VITE_SUPABASE_URL;
-  const supabaseKey = env.VITE_SUPABASE_ANON_KEY;
-  
+  const supabaseUrl = env.SUPABASE_URL;
+  const supabaseKey = env.SUPABASE_ANON_KEY;
+
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration missing. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Cloudflare Pages environment variables.');
+    throw new Error('Supabase configuration missing. Please configure SUPABASE_URL and SUPABASE_ANON_KEY in Cloudflare Pages environment variables.');
   }
-  
-  return createClient(supabaseUrl, supabaseKey);
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false },
+    global: { fetch },
+  });
 }
 
 // API Response helper
@@ -75,8 +78,10 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         const features = url.searchParams.get('features');
         const search = url.searchParams.get('search');
         const featured = url.searchParams.get('featured');
-        const page = parseInt(url.searchParams.get('page') || '1');
-        const limit = parseInt(url.searchParams.get('limit') || '20');
+        const pageRaw = url.searchParams.get('page') || '1';
+        const limitRaw = url.searchParams.get('limit') || '20';
+        const page = Math.max(1, parseInt(pageRaw, 10) || 1);
+        const limit = Math.max(1, Math.min(parseInt(limitRaw, 10) || 20, 50));
         const sort = url.searchParams.get('sort') || 'name';
 
         // Lista de produtos com filtros usando tabela correta `products`
@@ -99,7 +104,10 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
           }
         }
         if (search) {
-          query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+          const q = search.trim();
+          if (q) {
+            query = query.or(`name.ilike.%${q}%,description.ilike.%${q}%`);
+          }
         }
         if (featured === 'true') {
           query = query.eq('featured', true);
@@ -133,7 +141,7 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         });
       } else if (pathSegments[0] === 'featured' && pathSegments[1] === 'list') {
         // GET /api/products/featured/list
-        const limit = parseInt(url.searchParams.get('limit') || '4');
+        const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '4', 10) || 4, 50));
         
         const { data, error } = await supabase
           .from('products')
@@ -149,7 +157,7 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         });
       } else if (pathSegments[0] === 'highlighted') {
         // GET /api/products/highlighted
-        const limit = parseInt(url.searchParams.get('limit') || '6');
+        const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '6', 10) || 6, 50));
         
         // Fallback: usar produtos com `featured=true` como "highlighted"
         const { data, error } = await supabase
@@ -315,11 +323,17 @@ async function handleQuotes(request: Request, supabase: any, pathSegments: strin
 }
 
 // Health check
-function handleHealth() {
+function handleHealth(env?: any) {
+  const hasUrl = !!(env && env.SUPABASE_URL);
+  const hasKey = !!(env && env.SUPABASE_ANON_KEY);
   return apiResponse({
-    success: true,
-    message: 'API is healthy',
+    success: hasUrl && hasKey,
+    message: 'API health check',
     timestamp: new Date().toISOString(),
+    env: {
+      hasSupabaseUrl: hasUrl,
+      hasSupabaseAnonKey: hasKey,
+    },
   });
 }
 
@@ -349,10 +363,10 @@ export async function onRequest(context: any) {
     const pathSegments = url.pathname.replace('/api/', '').split('/').filter(Boolean);
 
     // Verificar variáveis de ambiente
-    if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_ANON_KEY) {
+    if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
       console.error(`[${new Date().toISOString()}] [CLOUDFLARE_API] ❌ Variáveis de ambiente faltando:`, {
-        hasSupabaseUrl: !!env.VITE_SUPABASE_URL,
-        hasSupabaseKey: !!env.VITE_SUPABASE_ANON_KEY
+        hasSupabaseUrl: !!env.SUPABASE_URL,
+        hasSupabaseKey: !!env.SUPABASE_ANON_KEY
       });
       return errorResponse('Configuração do servidor incompleta', 500);
     }
@@ -364,7 +378,7 @@ export async function onRequest(context: any) {
     
     // Route to appropriate handler
     if (pathSegments.length === 0 || pathSegments[0] === 'health') {
-      response = handleHealth();
+      response = handleHealth(env);
     } else if (pathSegments[0] === 'products') {
       response = await handleProducts(request, supabase, pathSegments.slice(1));
     } else if (pathSegments[0] === 'quotes') {
