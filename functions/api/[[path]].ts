@@ -85,6 +85,7 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         const sort = url.searchParams.get('sort') || 'name';
 
         // Lista de produtos com filtros usando tabela correta `products`
+        let useLegacy = false;
         let query = supabase.from('products').select('*', { count: 'exact' });
 
         // Apply filters
@@ -121,9 +122,67 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
         // Apply sorting
         query = query.order(sort);
 
-        const { data, error, count } = await query;
+        let data, error, count;
+        try {
+          ({ data, error, count } = await query);
+          if (error) throw error;
+        } catch (err: any) {
+          const msg = err?.message || '';
+          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
+            // Fallback para tabela legacy 'produtos_ecologicos'
+            useLegacy = true;
+          } else {
+            throw err;
+          }
+        }
 
-        if (error) throw error;
+        if (useLegacy) {
+          // Construir consulta equivalente na tabela legacy
+          let legacy = supabase.from('produtos_ecologicos').select('*', { count: 'exact' });
+          if (search) {
+            const q = search.trim();
+            if (q) {
+              legacy = legacy.or(`Nome.ilike.%${q}%,Descricao.ilike.%${q}%`);
+            }
+          }
+          const from = (page - 1) * limit;
+          const to = from + limit - 1;
+          legacy = legacy.range(from, to).order('Nome');
+          const resp = await legacy;
+          if (resp.error) throw resp.error;
+          const items = (resp.data || []).map((p: any) => ({
+            id: String(p.id ?? crypto.randomUUID()),
+            name: p.Nome ?? '',
+            description: p.Descricao ?? '',
+            category_id: null,
+            images: p.IMAGEM ? [p.IMAGEM] : [],
+            sustainability_features: [],
+            featured: false,
+            specifications: null,
+            features: [],
+            certifications: [],
+            rating: null,
+            review_count: null,
+            in_stock: true,
+            created_at: null,
+            updated_at: null,
+          }));
+
+          return apiResponse({
+            success: true,
+            data: {
+              items,
+              pagination: {
+                currentPage: page,
+                totalPages: Math.ceil((resp.count || 0) / limit),
+                totalItems: resp.count || 0,
+                itemsPerPage: limit,
+                hasNextPage: page * limit < (resp.count || 0),
+                hasPrevPage: page > 1,
+              },
+            },
+          });
+        }
 
         return apiResponse({
           success: true,
@@ -142,68 +201,120 @@ async function handleProducts(request: Request, supabase: any, pathSegments: str
       } else if (pathSegments[0] === 'featured' && pathSegments[1] === 'list') {
         // GET /api/products/featured/list
         const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '4', 10) || 4, 50));
-        
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('featured', true)
-          .limit(limit);
 
-        if (error) throw error;
-
-        return apiResponse({
-          success: true,
-          data: data || [],
-        });
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('featured', true)
+            .limit(limit);
+          if (error) throw error;
+          return apiResponse({ success: true, data: data || [] });
+        } catch (err: any) {
+          const msg = err?.message || '';
+          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
+            // Fallback: pegar quaisquer itens da tabela legacy
+            const { data } = await supabase
+              .from('produtos_ecologicos')
+              .select('*')
+              .limit(limit);
+            const items = (data || []).map((p: any) => ({
+              id: String(p.id ?? crypto.randomUUID()),
+              name: p.Nome ?? '',
+              description: p.Descricao ?? '',
+              images: p.IMAGEM ? [p.IMAGEM] : [],
+              featured: true,
+            }));
+            return apiResponse({ success: true, data: items });
+          }
+          throw err;
+        }
       } else if (pathSegments[0] === 'highlighted') {
         // GET /api/products/highlighted
         const limit = Math.max(1, Math.min(parseInt(url.searchParams.get('limit') || '6', 10) || 6, 50));
-        
-        // Fallback: usar produtos com `featured=true` como "highlighted"
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('featured', true)
-          .limit(limit);
 
-        if (error) throw error;
-
-        return apiResponse({
-          success: true,
-          data: data || [],
-        });
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('featured', true)
+            .limit(limit);
+          if (error) throw error;
+          return apiResponse({ success: true, data: data || [] });
+        } catch (err: any) {
+          const msg = err?.message || '';
+          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
+            // Fallback: usar legacy
+            const { data } = await supabase
+              .from('produtos_ecologicos')
+              .select('*')
+              .limit(limit);
+            const items = (data || []).map((p: any) => ({
+              id: String(p.id ?? crypto.randomUUID()),
+              name: p.Nome ?? '',
+              description: p.Descricao ?? '',
+              images: p.IMAGEM ? [p.IMAGEM] : [],
+              featured: true,
+            }));
+            return apiResponse({ success: true, data: items });
+          }
+          throw err;
+        }
       } else if (pathSegments[0] === 'categories' && pathSegments[1] === 'list') {
         // GET /api/products/categories/list
-        // Extrair categorias distintas a partir de `category_id`
-        const { data, error } = await supabase
-          .from('products')
-          .select('category_id')
-          .not('category_id', 'is', null);
-
-        if (error) throw error;
-
-        const categories = [...new Set((data || []).map((item: any) => item.category_id))];
-
-        return apiResponse({
-          success: true,
-          data: categories,
-        });
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('category_id')
+            .not('category_id', 'is', null);
+          if (error) throw error;
+          const categories = [...new Set((data || []).map((item: any) => item.category_id))];
+          return apiResponse({ success: true, data: categories });
+        } catch (err: any) {
+          const msg = err?.message || '';
+          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
+            // Fallback: categorias distintas por fornecedor na tabela legacy
+            const { data } = await supabase
+              .from('produtos_ecologicos')
+              .select('Fornecedor')
+              .not('Fornecedor', 'is', null);
+            const categories = [...new Set((data || []).map((item: any) => item.Fornecedor))];
+            return apiResponse({ success: true, data: categories });
+          }
+          throw err;
+        }
       } else if (pathSegments.length === 1) {
         // GET /api/products/:id
         const productId = pathSegments[0];
-        
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', productId)
-          .single();
-
-        if (error) throw error;
-
-        return apiResponse({
-          success: true,
-          data: data,
-        });
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', productId)
+            .single();
+          if (error) throw error;
+          return apiResponse({ success: true, data });
+        } catch (err: any) {
+          const msg = err?.message || '';
+          if (msg.includes('Could not find the table') || msg.includes('relation') || msg.includes('does not exist')) {
+            // Buscar no legacy por id
+            const { data } = await supabase
+              .from('produtos_ecologicos')
+              .select('*')
+              .eq('id', parseInt(productId, 10))
+              .single();
+            if (!data) return errorResponse('Produto não encontrado', 404);
+            const mapped = {
+              id: String(data.id),
+              name: data.Nome ?? '',
+              description: data.Descricao ?? '',
+              images: data.IMAGEM ? [data.IMAGEM] : [],
+              featured: false,
+            };
+            return apiResponse({ success: true, data: mapped });
+          }
+          throw err;
+        }
       }
     }
 
